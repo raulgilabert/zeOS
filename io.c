@@ -76,7 +76,7 @@ void printc_color(char c, char color)
   }
   else
   {
-		Word col = color << 2;
+		Word col = color << 8;
     Word ch = (Word) (c & 0x00FF) | col;
 		Word *screen = (Word *)0xb8000;
 		screen[(y * NUM_COLUMNS + x)] = ch;
