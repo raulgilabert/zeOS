@@ -1,3 +1,9 @@
 *.o
 *.s
 *.bin
+*.txt
+*.out
+system
+bootsect
+user
+build
