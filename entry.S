@@ -64,13 +64,19 @@
 			popl %fs; \
 			popl %gs 
 
+#define EOI \
+			movb $0x20, %al ; \
+			outb %al, $0x20 ;
 
-ENTRY(clock_handler)
+
+ENTRY(keyboard_handler)
 			SAVE_ALL
 
+			EOI	
 			
-
+			call keyboard_routine
 
 			RESTORE_ALL
+			iret
 
 
