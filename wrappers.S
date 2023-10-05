@@ -29,8 +29,6 @@ write_end:
     popl %ebp
     ret
 
-    ret
-
 ENTRY(gettime)
 
     push %ebp
