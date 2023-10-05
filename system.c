@@ -100,7 +100,7 @@ int __attribute__((__section__(".text.main")))
 
 
 	printk("Raul Gilabert Gamez\n");
-	printk("Enrique y ya esta\n");
+	printk("Enrique Andujar Sanchez\n");
 	printk("SO2 Q1 2023-2024\n");
 
   printk("Entering user mode...");
