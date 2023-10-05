@@ -126,10 +126,8 @@ void keyboard_routine()
 		}
 	}
 }
-extern int zeos_ticks;
 
 void clock_routine()
 {
-  ++zeos_ticks;
 	zeos_show_clock();
 }

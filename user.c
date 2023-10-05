@@ -3,6 +3,7 @@
 char buff[24];
 
 int pid;
+
 int
 add(int par1, int par2)
 {
@@ -16,9 +17,8 @@ int __attribute__ ((__section__(".text.main")))
        privileged one, and so it will raise an exception */
      /* __asm__ __volatile__ ("mov %0, %%cr3"::"r" (0) ); */
 
-  //int num = write(1, "Porfa funciona\n", 15);
-  //perror();
-  
+  int num = write(1, "Porfa funciona\n", 15);
+  perror();
+
   while(1) { }
-  
 }
