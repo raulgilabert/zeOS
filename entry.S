@@ -6,6 +6,7 @@
 #include <segment.h>
 #include <errno.h>
 
+
 /**************************************************/
 /**** Save & Restore ******************************/
 /**                                              **/
@@ -16,9 +17,9 @@
 /**                                              **/
 /** Stack layout in 'systemCall':                **/
 /**                                              **/
-/**   0(%esp) - %ebx    \                        **/
+/**   0(%esp) - %edx    \                        **/
 /**   4(%esp) - %ecx     |                       **/
-/**   8(%esp) - %edx     |                       **/
+/**   8(%esp) - %ebx     |                       **/
 /**   C(%esp) - %esi     | Register saved        **/
 /**  10(%esp) - %edi     |  by 'save'            **/
 /**  14(%esp) - %ebp     |                       **/
@@ -44,82 +45,74 @@
       pushl %ebp; \
       pushl %edi; \
       pushl %esi; \
-      pushl %edx; \
-      pushl %ecx; \
       pushl %ebx; \
+      pushl %ecx; \
+      pushl %edx; \
       movl $__KERNEL_DS, %edx;    \
       movl %edx, %ds;           \
       movl %edx, %es
 
-/*** Reverse order of SAVE_ALL ***/
 #define RESTORE_ALL \
-      popl %ebx; \
-      popl %ecx; \
-      popl %edx; \
-      popl %esi; \
-      popl %edi; \
-      popl %ebp; \
-      popl %eax; \
-      popl %ds; \
-      popl %es; \
-      popl %fs; \
-      popl %gs; \
+			popl %edx; \
+			popl %ecx; \
+			popl %ebx; \
+			popl %esi; \
+			popl %edi; \
+			popl %ebp; \
+			popl %eax; \
+			popl %ds; \
+			popl %es; \
+			popl %fs; \
+			popl %gs 
 
 #define EOI \
-      movb $0x20, %al; \
-      outb %al, $0x20;
+			movb $0x20, %al ; \
+			outb %al, $0x20 ;
 
-ENTRY(clock_handler)
-      SAVE_ALL
-      EOI
-      call clock_routine
-      RESTORE_ALL
-      iret
 
 ENTRY(keyboard_handler)
-      SAVE_ALL
-      EOI
-      call keyboard_routine
-      RESTORE_ALL
-      /*May need to remove error code (see page 26, point 5)*/
-      iret
+			SAVE_ALL
 
-ENTRY(writeMSR)
-      # Two parameters:
-      # MSR Number
-      # MSR Value
-      push %ebp
-      mov %esp, %ebp
+			EOI	
+			
+			call keyboard_routine
 
-      mov 0x8(%ebp), %ecx
-      movl $0, %edx       # High part of the value is 0.
-      mov 0xc(%ebp), %eax # Low part of the value is stored in the second parameter.
-      wrmsr
+			RESTORE_ALL
+			iret
 
-      pop %ebp
-      ret
+ENTRY(clock_handler)
+			SAVE_ALL
 
-ENTRY(syscall_handler_sysenter)
-      push $__USER_DS
-      push %EBP // User stack address
-      pushfl
-      push $__USER_CS
-      push 4(%EBP) // User return address
-      SAVE_ALL
-      cmpl $0, %EAX
-      jl sysenter_err
-      cmpl $MAX_SYSCALL, %EAX
-      jg sysenter_err
-      call *sys_call_table(, %EAX, 0x04)
-      jmp sysenter_fin
-sysenter_err:
-      movl $-ENOSYS, %EAX # ENOSYS WILL REPLACE
-sysenter_fin:
-      movl %EAX, 0x18(%ESP)
-      RESTORE_ALL
-      movl (%ESP), %EDX // Return address
-      movl 12(%ESP), %ECX // User stack address
-      sti // Enable interrupts again
-      sysexit
+			EOI
+
+			call clock_routine
+
+			RESTORE_ALL
+			iret
+
+ENTRY(system_call_handler)
+			SAVE_ALL
+			cmpl $0, %eax /* posible entrada negativa */
+			jl error
+
+			cmpl $MAX_SYSCALL, %eax /* posible entrada superior a la última */
+			jge error
+
+			call *sys_call_table(, %eax, 0x04)
+			jmp end
+
+error:
+			movl $-ENOSYS, %eax
+
+end:
+			movl %eax, 0x18(%esp)
+
+			RESTORE_ALL
+
+			iret 
 
 
+ENTRY(custom_page_fault_handler)
+			call custom_page_fault_routine
+
+			iret
