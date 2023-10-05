@@ -28,3 +28,25 @@ write_end:
 
     popl %ebp
     ret
+
+ENTRY(gettime)
+
+    push %ebp
+	mov %esp,%ebp
+
+
+	movl $10, %eax
+
+    int $0x80
+
+    cmpl $0, %eax
+    jg gettime_end
+
+    negl %eax
+    movl %eax, errno
+    movl $-1, %eax
+
+gettime_end:
+
+    popl %ebp
+    ret
