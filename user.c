@@ -17,12 +17,7 @@ int __attribute__ ((__section__(".text.main")))
        privileged one, and so it will raise an exception */
      /* __asm__ __volatile__ ("mov %0, %%cr3"::"r" (0) ); */
 
-  //int num = write(1, "Porfa funciona\n", 15);
-  //perror();
-
-  
-  //comprobación de ticks = poner siguiente linea en while
-  //if(gettime() < 5)write(1, "HOLA QUE TAL",gettime()); 
-
-  while(1) { }
+	
+  while(1) {
+  }
 }
