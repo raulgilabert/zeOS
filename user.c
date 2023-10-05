@@ -17,7 +17,8 @@ int __attribute__ ((__section__(".text.main")))
        privileged one, and so it will raise an exception */
      /* __asm__ __volatile__ ("mov %0, %%cr3"::"r" (0) ); */
 
-  int num = addASM(0x42, 0x666);
+  int num = write(1, "Porfa funciona\n", 15);
+  perror();
 
   while(1) { }
 }

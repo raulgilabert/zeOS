@@ -4,6 +4,7 @@
 
 #include <asm.h>
 #include <segment.h>
+#include <errno.h>
 
 
 /**************************************************/
@@ -87,4 +88,31 @@ ENTRY(clock_handler)
 			call clock_routine
 
 			RESTORE_ALL
+			iret
+
+ENTRY(system_call_handler)
+			SAVE_ALL
+			cmpl $0, %eax /* posible entrada negativa */
+			jl error
+
+			cmpl $MAX_SYSCALL, %eax /* posible entrada superior a la última */
+			jge error
+
+			call *sys_call_table(, %eax, 0x04)
+			jmp end
+
+error:
+			movl $-ENOSYS, %eax
+
+end:
+			movl %eax, 0x18(%esp)
+
+			RESTORE_ALL
+
+			iret 
+
+
+ENTRY(custom_page_fault_handler)
+			call custom_page_fault_routine
+
 			iret
