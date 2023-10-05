@@ -13,7 +13,7 @@
 #include <utils.h>
 #include <zeos_mm.h> /* TO BE DELETED WHEN ADDED THE PROCESS MANAGEMENT CODE TO BECOME MULTIPROCESS */
 
-
+int zeos_ticks;
 int (*usr_main)(void) = (void *) (PAG_LOG_INIT_CODE*PAGE_SIZE);
 unsigned int *p_sys_size = (unsigned int *) KERNEL_START;
 unsigned int *p_usr_size = (unsigned int *) KERNEL_START+1;
@@ -60,7 +60,6 @@ inline void set_seg_regs(Word data_sel, Word stack_sel, DWord esp)
 int __attribute__((__section__(".text.main")))
   main(void)
 {
-
   set_eflags();
 
   /* Define the kernel segment registers  and a stack to execute the 'main' code */
@@ -110,7 +109,7 @@ int __attribute__((__section__(".text.main")))
    * and going to execute 'magically' at 'usr_main'...
    */
   return_gate(__USER_DS, __USER_DS, USER_ESP, __USER_CS, (DWord) usr_main);
-
+  zeos_ticks = 0;
   /* The execution never arrives to this point */
   return 0;
 }
