@@ -35,6 +35,8 @@ SYSOBJ = \
 	hardware.o \
 	list.o \
 	sys_libc.o \
+	task_switch.o \
+	register_info.o \
 
 LIBZEOS = -L . -l zeos
 
@@ -77,6 +79,13 @@ wrappers.s: wrappers.S $(INCLUDEDIR)/asm.h
 
 
 sys_libc.o:sys_libc.c $(INCLUDEDIR)/sys_libc.h
+
+task_switch.s: task_switch.S $(INCLUDEDIR)/asm.h
+	$(CPP) $(ASMFLAGS) -o $@ $<
+
+register_info.s: registers_info.S $(INCLUDEDIR)/asm.h
+	$(CPP) $(ASMFLAGS) -o $@ $<
+
 
 
 sys_call_table.s: sys_call_table.S $(INCLUDEDIR)/asm.h $(INCLUDEDIR)/segment.h
