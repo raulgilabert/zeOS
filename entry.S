@@ -117,4 +117,3 @@ ENTRY(custom_page_fault_handler)
 
 			iret
 
-            

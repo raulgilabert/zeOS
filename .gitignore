@@ -7,3 +7,5 @@ system
 bootsect
 user
 build
+*.log
+*tar.gz

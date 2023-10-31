@@ -35,6 +35,7 @@ SYSOBJ = \
 	hardware.o \
 	list.o \
 	sys_libc.o \
+	tasks.o \
 
 LIBZEOS = -L . -l zeos
 
@@ -74,6 +75,11 @@ suma.s: suma.S $(INCLUDEDIR)/asm.h
 
 wrappers.s: wrappers.S $(INCLUDEDIR)/asm.h
 	$(CPP) $(ASMFLAGS) -o $@ $<
+
+tasks.s: tasks.S $(INCLUDEDIR)/asm.h
+	$(CPP) $(ASMFLAGS) -o $@ $<
+
+
 
 
 sys_libc.o:sys_libc.c $(INCLUDEDIR)/sys_libc.h

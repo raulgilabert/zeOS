@@ -85,7 +85,7 @@ int __attribute__((__section__(".text.main")))
   init_mm();
 
   /* Initialize an address space to be used for the monoprocess version of ZeOS */
-  monoprocess_init_addr_space(); /* TO BE DELETED WHEN THE PROCESS MANAGEMENT CODE TO BECOME MULTIPROCESS IS ADDED */
+  //monoprocess_init_addr_space(); /* TO BE DELETED WHEN THE PROCESS MANAGEMENT CODE TO BECOME MULTIPROCESS IS ADDED */
 
   /* Initialize Scheduling */
   init_sched();
@@ -113,6 +113,8 @@ int __attribute__((__section__(".text.main")))
    * and going to execute 'magically' at 'usr_main'...
    */
   return_gate(__USER_DS, __USER_DS, USER_ESP, __USER_CS, (DWord) usr_main);
+
+  printk("PANIC");
 
   /* The execution never arrives to this point */
   return 0;
