@@ -13,6 +13,9 @@
 
 Gate idt[IDT_ENTRIES];
 Register    idtR;
+
+extern struct task_struct *idle_task;
+extern struct list_head readyqueue;
 extern zeos_ticks;
 char char_map[] =
 {
@@ -120,6 +123,12 @@ void keyboard_routine()
 		{
 			printc_xy(0, 0, 'C');
 		}
+    else if (key_value == 'k')
+    {
+      struct list_head *first = list_first(&readyqueue);
+      struct task_struct *new_task = list_head_to_task_struct(first);
+      task_switch( (union task_union *) new_task);
+    }
 		else
 		{
 			printc_xy(0, 0, key_value);

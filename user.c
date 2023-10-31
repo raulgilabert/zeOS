@@ -17,7 +17,23 @@ int __attribute__ ((__section__(".text.main")))
        privileged one, and so it will raise an exception */
      /* __asm__ __volatile__ ("mov %0, %%cr3"::"r" (0) ); */
 
-	
+  //write(1, "A", 1);
+  int i = 0;
+
+  int pid = fork();
+
+
+  if (pid < 0)
+    write(1, "AAAAA", 5);
+
+    write(1, "mi PID es: ", 10);
+
+    char buff[16];
+
+    itoa(pid, buff);
+    write(1, buff, strlen(buff));
+    write(1, "\n", 1);
+
   while(1) {
   }
 }

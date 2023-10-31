@@ -117,14 +117,3 @@ ENTRY(custom_page_fault_handler)
 
 			iret
 
-ENTRY(writeMSR)
-      pushl %ebp
-      movl %esp, %ebp
-
-      movl 0x8(%ebp), %ecx
-      movl $0, %edx
-      movl 0xc(%ebp), %eax
-      wrmsr
-
-      popl %ebp
-      ret 
