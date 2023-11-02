@@ -59,7 +59,8 @@ int sys_fork()
   // Pillamos el task_struct si quedan disponibles
   struct list_head *first = list_first(&freequeue);
   struct task_struct *new_struct = list_head_to_task_struct(first);
-  list_del(&freequeue);
+
+  list_del(first);
 
   union task_union *new_union = (union task_union *) new_struct;
   
@@ -129,6 +130,7 @@ int sys_fork()
  // creates the child process
   PID=next_pid++;
   new_struct->PID= PID;
+  new_struct->state = ST_READY;
   list_add_tail(&(new_struct->list), &readyqueue);
   
   return PID;

@@ -12,6 +12,8 @@
 #define NR_TASKS      10
 #define KERNEL_STACK_SIZE	1024
 
+#define QUANTUM 100
+
 enum state_t { ST_RUN, ST_READY, ST_BLOCKED };
 
 struct task_struct {
@@ -19,8 +21,9 @@ struct task_struct {
   page_table_entry * dir_pages_baseAddr;
   struct list_head list; // Para encolar la estructura
   unsigned long kernel_esp;
-  int time_execution;
-  int last_ticks;
+  int quantum;
+  int ticks_from_change;
+  enum state_t state;
 
 };
 
@@ -62,5 +65,6 @@ void sched_next_rr();
 void update_process_state_rr(struct task_struct *t, struct list_head *dest);
 int needs_sched_rr();
 void update_sched_data_rr();
+void schedule();
 
 #endif  /* __SCHED_H__ */

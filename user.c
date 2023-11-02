@@ -22,17 +22,34 @@ int __attribute__ ((__section__(".text.main")))
 
   int pid = fork();
 
+  //int pid2 = fork();
+  //int pid3 = fork();
 
   if (pid < 0)
     write(1, "AAAAA", 5);
 
-    write(1, "mi PID es: ", 10);
+  write(1, "mi PID es: ", 10);
 
-    char buff[16];
+  char buff[16];
 
-    itoa(pid, buff);
-    write(1, buff, strlen(buff));
-    write(1, "\n", 1);
+  itoa(pid, buff);
+  write(1, buff, strlen(buff));
+  write(1, "\n", 1);
+
+  if (pid != 0)
+  {
+    while (1)
+    {
+      //write(1, "hola", 4);
+    }
+  }
+  else
+  {
+    while (1)
+    {
+      //write(1, "adios", 5);
+    }
+  }
 
   while(1) {
   }
