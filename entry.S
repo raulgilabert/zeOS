@@ -73,25 +73,33 @@
 ENTRY(keyboard_handler)
 			SAVE_ALL
 
+			call user_to_system
 			EOI	
 			
 			call keyboard_routine
 
+			call system_to_user
 			RESTORE_ALL
 			iret
 
 ENTRY(clock_handler)
 			SAVE_ALL
+			call user_to_system
 
 			EOI
 
 			call clock_routine
 
+			call system_to_user
 			RESTORE_ALL
 			iret
 
 ENTRY(system_call_handler)
 			SAVE_ALL
+
+			pushl %eax
+			call user_to_system
+			popl %eax
 			cmpl $0, %eax /* posible entrada negativa */
 			jl error
 
@@ -107,7 +115,10 @@ error:
 end:
 			movl %eax, 0x18(%esp)
 
+			call system_to_user
+
 			RESTORE_ALL
+
 
 			iret 
 
@@ -117,3 +128,39 @@ ENTRY(custom_page_fault_handler)
 
 			iret
 
+ENTRY(setMSR)
+	push %ebp
+	mov %esp, %ebp
+
+	mov 0x8(%ebp), %ecx # Paso de primer parametro = numero MSR
+	movl $0, %edx       	# Paso de la parte baja del segundo parametro 
+	mov 0xc(%ebp), %eax 
+	wrmsr
+
+	pop %ebp
+	ret
+
+ENTRY(syscall_handler_sysenter)
+      push $__USER_DS
+      push %ebp     # direccion stack del usuario 
+      pushfl
+      push $__USER_CS
+      push 4(%ebp)  # direccion de retorno
+      SAVE_ALL
+      cmpl $0, %eax
+      jl sysenter_error
+      cmpl $MAX_SYSCALL, %eax
+      jg sysenter_error
+      call *sys_call_table(, %eax, 0x04)
+      jmp sysenter_end
+
+sysenter_error:
+      movl $-ENOSYS, %eax # Si no existe la funcion
+
+sysenter_end:
+      movl %eax, 0x18(%esp)
+      RESTORE_ALL
+      movl (%esp), %edx # direcion de retorno
+      movl 12(%esp), %ecx # direccion de la stack del usuario
+      sti  
+      sysexit

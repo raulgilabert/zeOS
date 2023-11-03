@@ -44,6 +44,7 @@ USROBJ = \
 	libc.o \
 	suma.o \
 	wrappers.o \
+	espera.o \
 	# libjp.a \
 
 all:zeos.bin
@@ -77,6 +78,9 @@ wrappers.s: wrappers.S $(INCLUDEDIR)/asm.h
 	$(CPP) $(ASMFLAGS) -o $@ $<
 
 tasks.s: tasks.S $(INCLUDEDIR)/asm.h
+	$(CPP) $(ASMFLAGS) -o $@ $<
+
+espera.s: espera.S $(INCLUDEDIR)/asm.h
 	$(CPP) $(ASMFLAGS) -o $@ $<
 
 

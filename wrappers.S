@@ -40,13 +40,17 @@ ENTRY(gettime)
     push %ebp
 	mov %esp,%ebp
 
-
 	movl $10, %eax
 
-    int $0x80
+    push $gettime_ret
+	push %ebp
+	mov %esp,%ebp
+    sysenter
 
+gettime_ret:
     popl %ebp
     ret
+    
 ENTRY(getpid)
 
     push %ebp
@@ -59,6 +63,7 @@ ENTRY(getpid)
 
     popl %ebp
     ret
+    
 ENTRY(fork)
 
     push %ebp
@@ -90,3 +95,37 @@ ENTRY(exit)
 
     popl %ebp
     ret
+
+
+ENTRY(get_stats)
+    pushl %ebp
+    movl %esp, %ebp
+    
+    pushl %edx
+    pushl %ecx
+    
+    movl 0x08(%ebp), %edx
+    movl 0x0c(%ebp), %ecx
+
+    movl $35, %eax
+
+    int $0x80
+
+    popl %ecx
+    popl %edx
+    /* 
+    *  Si %eax >= 0 -> todo correcto
+    *  Si %eax < 0 -> ha habido un error
+    */
+    cmpl $0, %eax
+    jg get_stats_end
+
+    negl %eax
+    movl %eax, errno
+    movl $-1, %eax
+
+get_stats_end:
+
+    popl %ebp
+    ret
+

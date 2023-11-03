@@ -5,6 +5,7 @@
 #include <sched.h>
 #include <mm.h>
 #include <io.h>
+#include <utils.h>
 
 union task_union task[NR_TASKS]
   __attribute__((__section__(".data.task")));
@@ -19,7 +20,25 @@ struct task_struct *list_head_to_task_struct(struct list_head *l)
 struct task_struct *idle_task;
 struct list_head blocked;
 struct list_head freequeue, readyqueue;
-int quantum_ticks;
+unsigned long quantum_ticks;
+
+
+
+void initialize_stats(struct task_struct *t)
+{
+  t->stats.blocked_ticks = 0;
+  t->stats.elapsed_total_ticks = 0;
+  t->stats.ready_ticks = 0;
+  t->stats.remaining_ticks = 0;
+  t->stats.system_ticks = 0;
+  t->stats.total_trans = 0;
+  t->stats.user_ticks = 0;
+}
+
+
+
+
+
 
 /* get_DIR - Returns the Page Directory address for task 't' */
 page_table_entry * get_DIR (struct task_struct *t) 
@@ -71,6 +90,8 @@ void init_idle (void)
 	// ponemos valores
 	idle_struct->PID = 0;
 
+	initialize_stats(idle_struct);
+
 	set_quantum(idle_struct, QUANTUM);
 	idle_struct->state = ST_READY;
 
@@ -103,13 +124,16 @@ void init_task1(void)
 	set_quantum(init_struct, QUANTUM);
 	init_struct->state = ST_RUN;
 
+	initialize_stats(init_struct);
+
 	quantum_ticks = QUANTUM;
 
 	// damos el dir
 	allocate_DIR(init_struct); 
 
 	set_user_pages(init_struct);
-	  tss.esp0 = (unsigned long)&(init_union->stack[KERNEL_STACK_SIZE]);
+	tss.esp0 = (unsigned long)&(init_union->stack[KERNEL_STACK_SIZE]);
+	setMSR(0x175, tss.esp0);
 	//tss.esp0 = ((union task_union *)init_struct)->stack[KERNEL_STACK_SIZE];
 	set_cr3(get_DIR(init_struct));
 
@@ -142,6 +166,7 @@ void init_sched()
 void inner_task_switch(union task_union *new) 
 {
 	tss.esp0 = KERNEL_ESP(new);
+	setMSR(0x175, tss.esp0);
 	set_cr3(new->task.dir_pages_baseAddr);
 	
 	current()->kernel_esp = get_ebp();
@@ -177,7 +202,10 @@ void sched_next_rr()
 	}
 	
 	quantum_ticks = get_quantum(next);
-	task_switch(next);
+
+	system_to_ready();
+
+	task_switch((union task_union *)next);
 	
 }
 
@@ -201,6 +229,7 @@ int needs_sched_rr()
 	if (quantum_ticks > 0)
 		return 0;
 
+	current()->stats.total_trans++;
 	// no quedan otros procesos en ready
 	if (list_empty(&readyqueue))
 	{
@@ -223,6 +252,35 @@ void schedule()
   if (needs_sched_rr())
   {
     update_process_state_rr(current(), &readyqueue);
+
     sched_next_rr();
+
+	ready_to_system();
   }
 }
+
+
+
+void user_to_system()
+{
+	current()->stats.user_ticks += get_ticks() - current()->stats.elapsed_total_ticks;
+	current()->stats.elapsed_total_ticks = get_ticks();
+}
+void system_to_user()
+{
+	current()->stats.system_ticks += get_ticks() - current()->stats.elapsed_total_ticks;
+	current()->stats.elapsed_total_ticks = get_ticks();
+}
+
+void system_to_ready()
+{
+	current()->stats.system_ticks += get_ticks() - current()->stats.elapsed_total_ticks;
+	current()->stats.elapsed_total_ticks = get_ticks();
+}
+void ready_to_system()
+{
+	current()->stats.ready_ticks += get_ticks() - current()->stats.elapsed_total_ticks;
+	current()->stats.elapsed_total_ticks = get_ticks();
+}
+
+

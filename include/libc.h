@@ -21,4 +21,6 @@ int fork();
 
 void exit();
 
+int get_stats(int pid, struct stats *st);
+
 #endif  /* __LIBC_H__ */

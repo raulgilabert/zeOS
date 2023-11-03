@@ -17,7 +17,8 @@
 
 #define LECTURA 0
 #define ESCRIPTURA 1
-extern int zeos_ticks;
+extern unsigned long zeos_ticks;
+extern unsigned long quantum_ticks;
 extern struct list_head freequeue, readyqueue;
 
 unsigned int next_pid = 2;
@@ -25,6 +26,7 @@ unsigned int next_pid = 2;
 
 int ret_from_fork()
 {
+  ready_to_system();
   return 0;
 }
 
@@ -76,7 +78,6 @@ int sys_fork()
 
   page_table_entry *new_page_table = get_PT(new_struct);
 
-  int i = 0;
   int new_frame;
 
   for (int i = 0; i < NUM_PAG_DATA; ++i)
@@ -131,6 +132,9 @@ int sys_fork()
   PID=next_pid++;
   new_struct->PID= PID;
   new_struct->state = ST_READY;
+
+  initialize_stats(new_struct);
+
   list_add_tail(&(new_struct->list), &readyqueue);
   
   return PID;
@@ -138,7 +142,6 @@ int sys_fork()
 
 void sys_exit()
 {  
-  printk("exit");
   struct task_struct *proc = current();
 
   // eliminar la memoria allocada para datos
@@ -201,4 +204,24 @@ int sys_write(int fd, char *buffer, int size)
 int sys_gettime(){
 
   return zeos_ticks;
+}
+
+void sys_get_stats(int pid, struct stats *st)
+{
+  if (pid < 0)
+  {
+    return -EINVAL;
+  }
+
+  for (int i = 0; i < NR_TASKS; ++i)
+  {
+    if (task[i].task.PID == pid) 
+    {
+      task[i].task.stats.remaining_ticks = quantum_ticks;
+      copy_to_user(&task[i].task.stats, st, sizeof(struct stats));
+      return 0;
+    }
+  }
+
+  return -ESRCH;
 }
