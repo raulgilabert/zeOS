@@ -11,12 +11,12 @@ void imprimir_datos(int in_pid)
   write(1, "--------------------", 20);
   char buff[16];
   struct stats stats;
-
+  for(int i = 0; i < 16; ++i) buff[i] = 0;
   write(1, "\nPID: ", 6);
   itoa(in_pid, buff);
   write(1, buff, sizeof(buff));
 
-  get_stats(2, &stats);
+  get_stats(in_pid, &stats);
   write(1,"\n User_ticks: " , 15);
   itoa(stats.user_ticks, buff);  
   write(1, buff, strlen(buff));
@@ -92,7 +92,7 @@ int __attribute__ ((__section__(".text.main")))
 
     imprimir_datos(getpid());
 
-    write(1, "proceso hijo ejecuta exit()\n", 28);
+    //write(1, "proceso hijo ejecuta exit()\n", 28);
     //exit();
   }
 
