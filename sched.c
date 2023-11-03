@@ -71,7 +71,7 @@ void init_idle (void)
 	// ponemos valores
 	idle_struct->PID = 0;
 
-	idle_struct->quantum = QUANTUM;
+	set_quantum(idle_struct, QUANTUM);
 	idle_struct->state = ST_READY;
 
 	// damos el dir
@@ -100,7 +100,7 @@ void init_task1(void)
 	union task_union *init_union = (union task_union *) init_struct;
 
 	init_struct->PID = 1;
-	init_struct->quantum = QUANTUM;
+	set_quantum(init_struct, QUANTUM);
 	init_struct->state = ST_RUN;
 
 	quantum_ticks = QUANTUM;
@@ -113,6 +113,17 @@ void init_task1(void)
 	//tss.esp0 = ((union task_union *)init_struct)->stack[KERNEL_STACK_SIZE];
 	set_cr3(get_DIR(init_struct));
 
+}
+
+
+int get_quantum (struct task_struct *t)
+{
+	return t->quantum;
+}
+
+void set_quantum(struct task_struct *t, int new_quantum)
+{
+	t->quantum = new_quantum;
 }
 
 
@@ -153,26 +164,19 @@ void sched_next_rr()
 {
 	struct task_struct *next;
 
-	printk("SALUDO AL ELEMENTO\n");
 	if (!list_empty(&readyqueue))
 	{
 		struct list_head *first = list_first(&readyqueue);
 		list_del(first);
 		next = list_head_to_task_struct(first);
 
-		printk("NEXT ES DE LA COLA!\n");	
-
 	}
 	else
 	{
 		next = idle_task;
-		printk("NEXT ES IDLE!\n");	
 	}
 	
-	//update_process_state_rr(next, NULL);
-
-	quantum_ticks = next->quantum;
-	printk("Task Switch \n");
+	quantum_ticks = get_quantum(next);
 	task_switch(next);
 	
 }
@@ -185,23 +189,9 @@ void update_process_state_rr(struct task_struct *t, struct list_head *dest)
 	{	
 		if (t->PID != 0)
 		{
-			printk("ME ENCOLO\n");
 			list_add_tail(&(t->list), dest);
 		}
-		
-/*		if (dest == &readyqueue)
-		{
-			t->state = ST_READY;
-		}
-		else if (dest == &blocked)
-		{
-			t->state = ST_BLOCKED;
-		}
 	}
-	else
-	{
-		t->state = ST_RUN;
-*/	}
 
 }
 
@@ -214,7 +204,7 @@ int needs_sched_rr()
 	// no quedan otros procesos en ready
 	if (list_empty(&readyqueue))
 	{
-		quantum_ticks = current()->quantum;
+		quantum_ticks = get_quantum(current());
 		return 0;
 	}
 

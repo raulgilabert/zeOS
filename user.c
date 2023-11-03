@@ -45,10 +45,9 @@ int __attribute__ ((__section__(".text.main")))
   }
   else
   {
-    while (1)
-    {
-      //write(1, "adios", 5);
-    }
+    write(1, "soy el hijo y voy a morir\n", 27);
+    exit();
+    write(1, "no me deberia de ejecutar\n", 27);
   }
 
   while(1) {

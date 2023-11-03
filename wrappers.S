@@ -78,3 +78,15 @@ ENTRY(fork)
 fork_end:
     popl %ebp 
     ret
+
+ENTRY(exit)
+
+    push %ebp
+	mov %esp,%ebp
+
+	movl $1, %eax
+
+    int $0x80
+
+    popl %ebp
+    ret
