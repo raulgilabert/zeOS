@@ -73,25 +73,33 @@
 ENTRY(keyboard_handler)
 			SAVE_ALL
 
+			call user_to_system
 			EOI	
 			
 			call keyboard_routine
 
+			call system_to_user
 			RESTORE_ALL
 			iret
 
 ENTRY(clock_handler)
 			SAVE_ALL
+			call user_to_system
 
 			EOI
 
 			call clock_routine
 
+			call system_to_user
 			RESTORE_ALL
 			iret
 
 ENTRY(system_call_handler)
 			SAVE_ALL
+
+			pushl %eax
+			call user_to_system
+			popl %eax
 			cmpl $0, %eax /* posible entrada negativa */
 			jl error
 
@@ -107,7 +115,10 @@ error:
 end:
 			movl %eax, 0x18(%esp)
 
+			call system_to_user
+
 			RESTORE_ALL
+
 
 			iret 
 

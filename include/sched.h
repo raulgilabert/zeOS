@@ -8,6 +8,7 @@
 #include <list.h>
 #include <types.h>
 #include <mm_address.h>
+#include <stats.h>
 
 #define NR_TASKS      10
 #define KERNEL_STACK_SIZE	1024
@@ -22,8 +23,9 @@ struct task_struct {
   struct list_head list; // Para encolar la estructura
   unsigned long kernel_esp;
   int quantum;
-  int ticks_from_change;
   enum state_t state;
+
+  struct stats stats;
 
 };
 
@@ -69,5 +71,22 @@ void schedule();
 
 int get_quantum(struct task_struct *t);
 void set_quantum(struct task_struct *t, int new_quantum);
+
+void initialize_stats(struct task_struct *t);
+
+unsigned long get_ebp();
+
+void set_esp(unsigned long ebp_val);
+
+
+
+void user_to_system();
+void system_to_user();
+
+void system_to_ready();
+void ready_to_system();
+
+
+
 
 #endif  /* __SCHED_H__ */
