@@ -59,7 +59,8 @@ int sys_fork()
   // Pillamos el task_struct si quedan disponibles
   struct list_head *first = list_first(&freequeue);
   struct task_struct *new_struct = list_head_to_task_struct(first);
-  list_del(&freequeue);
+
+  list_del(first);
 
   union task_union *new_union = (union task_union *) new_struct;
   
@@ -126,9 +127,10 @@ int sys_fork()
   new_union->stack[KERNEL_STACK_SIZE - 0x12] = (unsigned long) &ret_from_fork;
   new_struct->kernel_esp = (unsigned long)&new_union->stack[KERNEL_STACK_SIZE - 0x13];
 
- // creates the child process
+ // crear el proceso hijo
   PID=next_pid++;
   new_struct->PID= PID;
+  new_struct->state = ST_READY;
   list_add_tail(&(new_struct->list), &readyqueue);
   
   return PID;
@@ -136,6 +138,25 @@ int sys_fork()
 
 void sys_exit()
 {  
+  printk("exit");
+  struct task_struct *proc = current();
+
+  // eliminar la memoria allocada para datos
+  page_table_entry *exit_proc_page_table = get_PT(proc);
+
+  for (int i = 0; i < NUM_PAG_DATA; ++i)
+  {
+    free_frame(get_frame(exit_proc_page_table, PAG_LOG_INIT_DATA + i));
+    del_ss_pag(exit_proc_page_table, PAG_LOG_INIT_DATA + i);
+  }
+
+  // liberar estructuras de datos del proceso
+  proc->dir_pages_baseAddr = NULL;
+  proc->PID = -1;
+
+  // uso del scheduler para cambiar de proceso
+  update_process_state_rr(proc, &freequeue);
+  sched_next_rr();
 }
 
 #define BUFFER_SIZE 256
