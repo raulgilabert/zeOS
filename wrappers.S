@@ -40,13 +40,17 @@ ENTRY(gettime)
     push %ebp
 	mov %esp,%ebp
 
-
 	movl $10, %eax
 
-    int $0x80
+    push $gettime_ret
+	push %ebp
+	mov %esp,%ebp
+    sysenter
 
+gettime_ret:
     popl %ebp
     ret
+    
 ENTRY(getpid)
 
     push %ebp
@@ -59,6 +63,7 @@ ENTRY(getpid)
 
     popl %ebp
     ret
+    
 ENTRY(fork)
 
     push %ebp

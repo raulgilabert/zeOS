@@ -132,7 +132,8 @@ void init_task1(void)
 	allocate_DIR(init_struct); 
 
 	set_user_pages(init_struct);
-	  tss.esp0 = (unsigned long)&(init_union->stack[KERNEL_STACK_SIZE]);
+	tss.esp0 = (unsigned long)&(init_union->stack[KERNEL_STACK_SIZE]);
+	setMSR(0x175, tss.esp0);
 	//tss.esp0 = ((union task_union *)init_struct)->stack[KERNEL_STACK_SIZE];
 	set_cr3(get_DIR(init_struct));
 
@@ -165,6 +166,7 @@ void init_sched()
 void inner_task_switch(union task_union *new) 
 {
 	tss.esp0 = KERNEL_ESP(new);
+	setMSR(0x175, tss.esp0);
 	set_cr3(new->task.dir_pages_baseAddr);
 	
 	current()->kernel_esp = get_ebp();

@@ -16,7 +16,7 @@ Register    idtR;
 
 extern struct task_struct *idle_task;
 extern struct list_head readyqueue;
-extern zeos_ticks;
+extern unsigned long zeos_ticks;
 char char_map[] =
 {
   '\0','\0','1','2','3','4','5','6',
@@ -78,6 +78,7 @@ void setTrapHandler(int vector, void (*handler)(), int maxAccessibleFromPL)
   idt[vector].highOffset      = highWord((DWord)handler);
 }
 
+void syscall_handler_sysenter();
 
 void setIdt()
 {
@@ -95,6 +96,9 @@ void setIdt()
 
 	
   setTrapHandler(0x80, system_call_handler, 3);
+
+  setMSR(0x174, __KERNEL_CS);
+  setMSR(0x176, (unsigned long)syscall_handler_sysenter);
 
   set_idt_reg(&idtR);
 }
