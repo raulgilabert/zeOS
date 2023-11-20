@@ -36,6 +36,7 @@ SYSOBJ = \
 	list.o \
 	sys_libc.o \
 	tasks.o \
+	circ_buff.o \
 
 LIBZEOS = -L . -l zeos
 
@@ -83,7 +84,7 @@ tasks.s: tasks.S $(INCLUDEDIR)/asm.h
 espera.s: espera.S $(INCLUDEDIR)/asm.h
 	$(CPP) $(ASMFLAGS) -o $@ $<
 
-
+circ_buff.o: circ_buff.c $(INCLUDEDIR)/circ_buff.h
 
 
 sys_libc.o:sys_libc.c $(INCLUDEDIR)/sys_libc.h
