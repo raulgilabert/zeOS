@@ -27,6 +27,8 @@ struct task_struct {
 
   struct stats stats;
 
+  unsigned long timeout;
+
 };
 
 union task_union {

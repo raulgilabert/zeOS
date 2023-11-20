@@ -19,7 +19,9 @@
 #define ESCRIPTURA 1
 extern unsigned long zeos_ticks;
 extern unsigned long quantum_ticks;
-extern struct list_head freequeue, readyqueue;
+extern struct list_head freequeue, readyqueue, blocked;
+
+extern struct circ_buff cb;
 
 unsigned int next_pid = 2;
 
@@ -206,7 +208,7 @@ int sys_gettime(){
   return zeos_ticks;
 }
 
-void sys_get_stats(int pid, struct stats *st)
+int sys_get_stats(int pid, struct stats *st)
 {
   if (pid < 0)
   {
@@ -226,8 +228,25 @@ void sys_get_stats(int pid, struct stats *st)
   return -ESRCH;
 }
 
-void sys_waitKey(char *b, int timeout)
+int sys_waitKey(char *b, int timeout)
 {
+  // comprobar que el buffer circular no esta vacío. En caso de estarlo, se bloquea el proceso
+  if (cb_empty(&cb))
+  {
+    // se añade el timeout al proceso
+    // según el profe 1 segundo son 18 ticks
+    current()->timeout = timeout*18;
+    update_process_state_rr(current(), &blocked);
+    sched_next_rr();
+  }
 
+  if (cb_empty(&cb))
+  {
+    return -ETIME;
+  }
 
+  // como el buffer no está vacío se devuelve el siguiente caracter por b
+  *b = cb_next(&cb);
+
+  return 0;
 }
