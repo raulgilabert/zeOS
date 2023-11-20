@@ -129,3 +129,29 @@ get_stats_end:
     popl %ebp
     ret
 
+ENTRY(waitKey)
+    pushl %ebp
+    movl %esp, %ebp
+    
+    pushl %edx
+    pushl %ecx
+    
+    movl 0x08(%ebp), %edx
+    movl 0x0c(%ebp), %ecx
+
+    movl $24, %eax
+
+    int $0x80
+
+    popl %ecx
+    popl %edx
+    /* 
+    *  Si %eax >= 0 -> todo correcto
+    *  Si %eax < 0 -> ha habido un error
+    */
+    cmpl $0, %eax
+    jg write_end
+
+    negl %eax
+    movl %eax, errno
+    movl $-1, %eax

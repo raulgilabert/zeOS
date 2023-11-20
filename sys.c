@@ -225,3 +225,9 @@ void sys_get_stats(int pid, struct stats *st)
 
   return -ESRCH;
 }
+
+void sys_waitKey(char *b, int timeout)
+{
+
+
+}

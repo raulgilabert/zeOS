@@ -8,8 +8,11 @@
 #include <io.h>
 #include <entry.h>
 #include <sys_libc.h>
+#include <circ_buff.h>
 
 #include <zeos_interrupt.h>
+
+extern struct circ_buff cb;
 
 Gate idt[IDT_ENTRIES];
 Register    idtR;
@@ -123,7 +126,9 @@ void keyboard_routine()
 	{
 		unsigned char key_value = char_map[key_read & 0x7F];
 
-		if (key_value == '\0')
+    cb_add(&cb, key_value);
+
+		/*if (key_value == '\0')
 		{
 			printc_xy(0, 0, 'C');
 		}
@@ -135,8 +140,7 @@ void keyboard_routine()
     }
 		else
 		{
-			printc_xy(0, 0, key_value);
-		}
+		}*/
 	}
 }
 
