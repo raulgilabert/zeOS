@@ -10,10 +10,9 @@
 /** Screen  ***/
 /**************/
 
-#define NUM_COLUMNS 80
-#define NUM_ROWS    25
-
 Byte x, y=19;
+
+Byte color = 0x02;
 
 /* Read a byte from 'port' */
 Byte inb (unsigned short port)
@@ -57,7 +56,7 @@ void printc(char c)
   }
   else
   {
-    Word ch = (Word) (c & 0x00FF) | 0x0200;
+    Word ch = (Word) (c & 0x00FF) | (color << 8);
 	Word *screen = (Word *)0xb8000;
 	screen[(y * NUM_COLUMNS + x)] = ch;
     if (++x >= NUM_COLUMNS)
@@ -66,10 +65,10 @@ void printc(char c)
    }
   }
 }
-
+/*
 void printc_color(char c, char color)
 {
-     __asm__ __volatile__ ( "movb %0, %%al; outb $0xe9" ::"a"(c)); /* Magic BOCHS debug: writes 'c' to port 0xe9 */
+     __asm__ __volatile__ ( "movb %0, %%al; outb $0xe9" ::"a"(c)); /* Magic BOCHS debug: writes 'c' to port 0xe9 
   if (c=='\n')
   {
 		move_line();
@@ -85,7 +84,7 @@ void printc_color(char c, char color)
 			move_line();
     }
   }
-}
+}*/
 
 void printc_xy(Byte mx, Byte my, char c)
 {

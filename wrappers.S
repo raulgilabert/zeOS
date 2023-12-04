@@ -96,6 +96,94 @@ ENTRY(exit)
     popl %ebp
     ret
 
+ENTRY(goto_xy)
+    push %ebp
+	mov %esp,%ebp
+
+    pushl %edx
+    pushl %ecx
+    
+    movl 0x08(%ebp), %edx
+    movl 0x0c(%ebp), %ecx
+
+	movl $33, %eax
+
+    int $0x80
+
+    popl %ecx
+    popl %edx
+
+    cmpl $0, %eax
+    jge goto_xy_end
+
+    negl %eax
+    movl %eax, errno
+    movl $-1, %eax
+
+goto_xy_end:
+
+    popl %ebp
+    ret
+
+
+ENTRY(change_color)
+    push %ebp
+	mov %esp,%ebp
+
+    pushl %edx
+    pushl %ecx
+    
+    movl 0x08(%ebp), %edx
+    movl 0x0c(%ebp), %ecx
+
+	movl $34, %eax
+
+    int $0x80
+
+    popl %ecx
+    popl %edx
+
+    cmpl $0, %eax
+    jge change_color_end
+
+    negl %eax
+    movl %eax, errno
+    movl $-1, %eax
+
+change_color_end:
+
+    popl %ebp
+    ret
+
+
+
+ENTRY(clrscr)
+    push %ebp
+	mov %esp,%ebp
+
+    pushl %edx
+    
+    movl 0x08(%ebp), %edx
+
+	movl $32, %eax
+
+    int $0x80
+
+    popl %edx
+
+    cmpl $0, %eax
+    jge clrscr_end
+
+    negl %eax
+    movl %eax, errno
+    movl $-1, %eax
+
+clrscr_end:
+
+    popl %ebp
+    ret
+
+
 
 ENTRY(get_stats)
     pushl %ebp

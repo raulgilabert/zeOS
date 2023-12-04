@@ -25,4 +25,10 @@ int get_stats(int pid, struct stats *st);
 
 int wait_key(char *b, int timeout);
 
+int goto_xy(int x, int y);
+
+int change_color(int fg, int bg);
+
+int clrscr(char *b);
+
 #endif  /* __LIBC_H__ */

@@ -17,8 +17,10 @@ extern struct circ_buff cb;
 Gate idt[IDT_ENTRIES];
 Register    idtR;
 
+
 extern struct task_struct *idle_task;
 extern struct list_head readyqueue;
+
 
 extern struct list_head keyboardqueue;
 
@@ -131,13 +133,13 @@ void keyboard_routine()
 
     cb_add(&cb, key_value);
 
-    // en caso de que haya un proceso bloqueado se le desbloquea
-
-    if (!list_empty(&blocked)) {
-      struct list_head *first_blocked = list_first(&blocked);
-      struct task_struct *task = list_head_to_task_struct(first_blocked);
-      update_process_state_rr(task, &readyqueue);
-   }
+    // si hay procesos bloqueados por teclado se pasa el primero a ready
+    if (!list_empty(&keyboardqueue))
+    {
+      struct list_head *first = list_first(&keyboardqueue);
+      struct task_struct *new_task = list_head_to_task_struct(first);
+      update_process_state_rr(new_task, &readyqueue);
+    }
 
 		/*if (key_value == '\0')
 		{
@@ -157,43 +159,33 @@ void keyboard_routine()
 
 void clock_routine()
 {
-  // iteramos por los procesos bloqueados
-  struct list_head *iterator;
-  if (!list_empty(&blocked))
-  {
-    list_for_each(iterator, &blocked)
-    {
-      struct task_struct *task = list_head_to_task_struct(iterator);
-      if (task->timeout == 0)
-      {
-        update_process_state_rr(task, &readyqueue);
-      }
-      else
-      {
-        --task->timeout;
-      }
-    }
-  }
+  //printk("pip\n");
 
   ++zeos_ticks;
 	zeos_show_clock();
 
-  // decrementamos el timeout de los procesos bloqueados de teclado
-  struct list_head *it = list_first(&keyboardqueue);
-
-  list_for_each(it, &keyboardqueue)
+  if (!list_empty(&keyboardqueue))
   {
-    struct task_struct *task = list_head_to_task_struct(it);
-    --(task->timeout);
+    // decrementamos el timeout de los procesos bloqueados de teclado
+    struct list_head *it = list_first(&keyboardqueue);
 
-    // en caso de que sea 0, lo pasamos a ready
-    if (task->timeout <= 0)
+    for (; it != &keyboardqueue;)
     {
-      update_process_state_rr(task, &readyqueue);
-      sched_next_rr();
+      struct task_struct *task = list_head_to_task_struct(it);
+      --(task->timeout);
+
+      it = it->next;
+
+      // en caso de que sea 0, lo pasamos a ready
+      if (task->timeout == 0)
+      {
+        //printk("es 0\n");
+        update_process_state_rr(task, &readyqueue);
+        //sched_next_rr(); Esto no se debería hacer aquí
+      }
     }
-  }
-  
+  }    
+  //printk("E");
 
   schedule();
 }

@@ -29,6 +29,10 @@ extern struct list_head keyboardqueue;
 
 extern struct circ_buff cb;
 
+extern Byte x, y;
+
+extern Byte color;
+
 unsigned int next_pid = 2;
 
 
@@ -282,4 +286,59 @@ int sys_waitKey(char *b, int timeout)
     // si no hay elementos, devolver error
     return -EAGAIN;
   }
+}
+
+
+int sys_goto_xy(int goto_x, int goto_y)
+{
+  if (goto_x < 0 || goto_x >= NUM_COLUMNS || goto_y < 0 || goto_y >= NUM_ROWS)
+  {
+    return -EINVAL;
+  }
+
+  x = goto_x;
+  y = goto_y;
+
+  return 0;
+}
+
+int sys_change_color(int fg, int bg)
+{
+  if (fg < 0 || fg > 15 || bg < 0 || bg > 7)
+  {
+    return -EINVAL;
+  }
+
+  color = 0 | bg << 4 | fg;
+
+  return 0;
+}
+
+int sys_clrscr(char *b)
+{
+  Word *screen = (Word *)0xb8000;
+
+  if (b == NULL)
+  {
+    for (int i = 0; i < NUM_COLUMNS; ++i)
+    {
+      for (int j = 0; j < NUM_ROWS; ++j)
+      {
+        screen[(j * NUM_COLUMNS + i)] = 0;
+      }
+    }
+  }
+  else
+  {
+    for (int i = 0; i < NUM_COLUMNS * 2; i+=2)
+    {
+      for (int j = 0; j < NUM_ROWS; ++j)
+      {
+        screen[j * NUM_COLUMNS + i/2] = (b[j * NUM_COLUMNS + i + 1] << 8) | 
+                                         b[j * NUM_COLUMNS + i];
+      }
+    }
+  }
+
+  return 0;
 }

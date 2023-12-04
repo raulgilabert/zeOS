@@ -74,23 +74,44 @@ int __attribute__ ((__section__(".text.main")))
 
 
   while(1) {
-    espera_larga();
-
-
-    // llamada a wait_key
-
     char buff;
+
+    
     int num = wait_key(&buff, 100);
 
     if (num >= 0)
     {
-      write(1, "Se ha pulsado la tecla: ", 24);
+/*      write(1, "Se ha pulsado la tecla: ", 24);
       write(1, &buff, 1);
       write(1, "\n", 1);
+*/
+      if (buff == 'a' || buff == 'A')
+      {
+        char new_screen[80*25*2];
+        for (int i = 0; i < 80*25*2; i+=2)
+        {
+          new_screen[i] = 'A';
+          new_screen[i+1] = 0x02;
+        }
+
+        clrscr(new_screen);
+      }
+
+      else if (buff == 'c' || buff == 'C')
+      {
+        clrscr(0);
+      }
+
+/*      char buff2[16];
+      for(int i = 0; i < 16; ++i) buff2[i] = 0;
+      itoa(getpid(), buff2);
+      write(1, "PID: ", 5);
+      write(1, buff2, strlen(buff2));
+      write(1, "\n", 1);*/
     }
     else
     {
-      write(1, "No se ha pulsado ninguna tecla\n", 31);
+      //write(1, "No se ha pulsado ninguna tecla\n", 31);
     }
   }
 }
