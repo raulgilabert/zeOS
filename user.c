@@ -63,14 +63,16 @@ int __attribute__ ((__section__(".text.main")))
 
   while(1) {
     char buff;
-    int num = wait_key(&buff, 101);
+
+    
+    int num = wait_key(&buff, 100);
 
     if (num >= 0)
     {
-      write(1, "Se ha pulsado la tecla: ", 24);
+/*      write(1, "Se ha pulsado la tecla: ", 24);
       write(1, &buff, 1);
       write(1, "\n", 1);
-
+*/
       if (buff == 'a' || buff == 'A')
       {
         char new_screen[80*25*2];
@@ -87,10 +89,17 @@ int __attribute__ ((__section__(".text.main")))
       {
         clrscr(0);
       }
+
+/*      char buff2[16];
+      for(int i = 0; i < 16; ++i) buff2[i] = 0;
+      itoa(getpid(), buff2);
+      write(1, "PID: ", 5);
+      write(1, buff2, strlen(buff2));
+      write(1, "\n", 1);*/
     }
     else
     {
-      write(1, "No se ha pulsado ninguna tecla\n", 31);
+      //write(1, "No se ha pulsado ninguna tecla\n", 31);
     }
   }
 }

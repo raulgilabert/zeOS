@@ -318,17 +318,24 @@ int sys_clrscr(char *b)
 
   if (b == NULL)
   {
-    Word new_screen[NUM_COLUMNS * NUM_ROWS];
-    for (int i = 0; i < NUM_COLUMNS * NUM_ROWS; ++i)
+    for (int i = 0; i < NUM_COLUMNS; ++i)
     {
-      new_screen[i] = 0;
+      for (int j = 0; j < NUM_ROWS; ++j)
+      {
+        screen[(j * NUM_COLUMNS + i)] = 0;
+      }
     }
-
-    copy_data(new_screen, screen, NUM_COLUMNS * NUM_ROWS * 2);
   }
   else
   {
-    copy_data(b, screen, NUM_COLUMNS * NUM_ROWS * 2);
+    for (int i = 0; i < NUM_COLUMNS * 2; i+=2)
+    {
+      for (int j = 0; j < NUM_ROWS; ++j)
+      {
+        screen[j * NUM_COLUMNS + i/2] = (b[j * NUM_COLUMNS + i + 1] << 8) | 
+                                         b[j * NUM_COLUMNS + i];
+      }
+    }
   }
 
   return 0;
