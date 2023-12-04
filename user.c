@@ -62,5 +62,23 @@ int __attribute__ ((__section__(".text.main")))
     
 
   while(1) {
+    espera_larga();
+
+
+    // llamada a wait_key
+
+    char buff;
+    int num = wait_key(&buff, 1);
+
+    if (num >= 0)
+    {
+      write(1, "Se ha pulsado la tecla: ", 24);
+      write(1, &buff, 1);
+      write(1, "\n", 1);
+    }
+    else
+    {
+      write(1, "No se ha pulsado ninguna tecla\n", 31);
+    }
   }
 }

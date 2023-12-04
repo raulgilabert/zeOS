@@ -24,7 +24,7 @@ ENTRY(write)
     *  Si %eax < 0 -> ha habido un error
     */
     cmpl $0, %eax
-    jg write_end
+    jge write_end
 
     negl %eax
     movl %eax, errno
@@ -118,7 +118,7 @@ ENTRY(get_stats)
     *  Si %eax < 0 -> ha habido un error
     */
     cmpl $0, %eax
-    jg get_stats_end
+    jge get_stats_end
 
     negl %eax
     movl %eax, errno
@@ -129,7 +129,7 @@ get_stats_end:
     popl %ebp
     ret
 
-ENTRY(waitKey)
+ENTRY(wait_key)
     pushl %ebp
     movl %esp, %ebp
     
@@ -150,8 +150,13 @@ ENTRY(waitKey)
     *  Si %eax < 0 -> ha habido un error
     */
     cmpl $0, %eax
-    jg write_end
+    jge wait_key_end
 
     negl %eax
     movl %eax, errno
     movl $-1, %eax
+
+wait_key_end:
+    
+    popl %ebp
+    ret

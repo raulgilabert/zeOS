@@ -23,4 +23,6 @@ void exit();
 
 int get_stats(int pid, struct stats *st);
 
+int wait_key(char *b, int timeout);
+
 #endif  /* __LIBC_H__ */

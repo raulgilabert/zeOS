@@ -15,11 +15,15 @@
 
 #include <errno.h>
 
+#include <circ_buff.h>
+
 #define LECTURA 0
 #define ESCRIPTURA 1
 extern unsigned long zeos_ticks;
 extern unsigned long quantum_ticks;
 extern struct list_head freequeue, readyqueue;
+
+extern struct circ_buff cb;
 
 unsigned int next_pid = 2;
 
@@ -226,8 +230,15 @@ void sys_get_stats(int pid, struct stats *st)
   return -ESRCH;
 }
 
-void sys_waitKey(char *b, int timeout)
+int sys_waitKey(char *b, int timeout)
 {
+  // comprobar que hay elementos en el buffer circular de teclado
+  if (!cb_empty(&cb))
+  {
+    *b = cb_next(&cb);
+    return 0;
+  }
 
-
+  // temp
+  return -1;
 }

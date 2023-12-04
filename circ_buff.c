@@ -13,13 +13,12 @@ void cb_init(struct circ_buff *cb)
 char cb_next(struct circ_buff *cb)
 {
     char a = cb->buff[cb->user++];
-    cb->user = (cb->user++)%CIRC_BUFF_SIZE;
+    cb->user = (cb->user)%CIRC_BUFF_SIZE;
     return a;
 }
 
 int cb_empty(struct circ_buff *cb)
 {
-
     if(cb->keyboard != cb->user)
         return 0;
     else
@@ -29,21 +28,9 @@ int cb_empty(struct circ_buff *cb)
 
 int cb_add(struct circ_buff *cb, char c)
 {
-    int diff;
-
-    if (cb->user < cb->keyboard)
-    {
-        diff = CIRC_BUFF_SIZE + (cb->user - cb->keyboard);
-    }
-    else
-    {
-        diff = cb->user - cb->keyboard;
-    }
-
-    if (diff != 1)
+    if ((CIRC_BUFF_SIZE + (cb->user - cb->keyboard))%CIRC_BUFF_SIZE != 1)
     {
         cb->buff[cb->keyboard++] = c;
         cb->keyboard = (cb->keyboard)%CIRC_BUFF_SIZE;
     }
-
 }
