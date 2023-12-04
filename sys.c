@@ -21,7 +21,9 @@
 #define ESCRIPTURA 1
 extern unsigned long zeos_ticks;
 extern unsigned long quantum_ticks;
-extern struct list_head freequeue, readyqueue;
+extern struct list_head freequeue, readyqueue, blocked;
+
+extern struct circ_buff cb;
 
 extern struct list_head keyboardqueue;
 
@@ -212,7 +214,7 @@ int sys_gettime(){
   return zeos_ticks;
 }
 
-void sys_get_stats(int pid, struct stats *st)
+int sys_get_stats(int pid, struct stats *st)
 {
   if (pid < 0)
   {

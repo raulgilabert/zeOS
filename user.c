@@ -59,7 +59,19 @@ int __attribute__ ((__section__(".text.main")))
      privileged one, and so it will raise an exception */
   /* __asm__ __volatile__ ("mov %0, %%cr3":: "r" (0) ); */
 
-    
+  char b;
+  int timeout = 10;
+
+  int err = waitKey(&b, timeout);
+
+  if (err < 0)
+  {
+    write(1, "AAAA", 4);
+  }
+  else {
+    write(1, &b, 1);
+  }
+
 
   while(1) {
     espera_larga();

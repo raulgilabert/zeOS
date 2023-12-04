@@ -131,6 +131,14 @@ void keyboard_routine()
 
     cb_add(&cb, key_value);
 
+    // en caso de que haya un proceso bloqueado se le desbloquea
+
+    if (!list_empty(&blocked)) {
+      struct list_head *first_blocked = list_first(&blocked);
+      struct task_struct *task = list_head_to_task_struct(first_blocked);
+      update_process_state_rr(task, &readyqueue);
+   }
+
 		/*if (key_value == '\0')
 		{
 			printc_xy(0, 0, 'C');
@@ -149,6 +157,23 @@ void keyboard_routine()
 
 void clock_routine()
 {
+  // iteramos por los procesos bloqueados
+  struct list_head *iterator;
+  if (!list_empty(&blocked))
+  {
+    list_for_each(iterator, &blocked)
+    {
+      struct task_struct *task = list_head_to_task_struct(iterator);
+      if (task->timeout == 0)
+      {
+        update_process_state_rr(task, &readyqueue);
+      }
+      else
+      {
+        --task->timeout;
+      }
+    }
+  }
 
   ++zeos_ticks;
 	zeos_show_clock();
