@@ -21,13 +21,11 @@
 #define ESCRIPTURA 1
 extern unsigned long zeos_ticks;
 extern unsigned long quantum_ticks;
-extern struct list_head freequeue, readyqueue, blocked;
+extern struct list_head freequeue, readyqueue;
 
 extern struct circ_buff cb;
 
 extern struct list_head keyboardqueue;
-
-extern struct circ_buff cb;
 
 extern Byte x, y;
 
