@@ -133,6 +133,14 @@ void keyboard_routine()
 
     cb_add(&cb, key_value);
 
+    // si hay procesos bloqueados por teclado se pasa el primero a ready
+    if (!list_empty(&keyboardqueue))
+    {
+      struct list_head *first = list_first(&keyboardqueue);
+      struct task_struct *new_task = list_head_to_task_struct(first);
+      update_process_state_rr(new_task, &readyqueue);
+    }
+
 		/*if (key_value == '\0')
 		{
 			printc_xy(0, 0, 'C');
