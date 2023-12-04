@@ -161,24 +161,11 @@ void clock_routine()
     struct task_struct *task = list_head_to_task_struct(it);
     --(task->timeout);
 
-    char buff[16];
-    uitox(task->PID, buff);
-    printk(buff);
-
-    printk(" ");
-
-    char buff2[16];
-    uitox(task->timeout, buff2);
-    printk(buff2);
- 
-
-    printk("\n");
-
     // en caso de que sea 0, lo pasamos a ready
-    if (task->timeout == 0)
+    if (task->timeout <= 0)
     {
-      printk("pasamos a ready\n");
       update_process_state_rr(task, &readyqueue);
+      sched_next_rr();
     }
   }
   

@@ -16,7 +16,7 @@
 #### Milestones
 
 - [x] teclado guarda en circular buffer
-- [ ] waitKey
+- [x] waitKey
 - [ ] gotoXY
 - [ ] changeColor & clrscr
 - [ ] create_thread & exit
@@ -28,14 +28,14 @@
 
 
 
-- [ ] wait_key
+- [x] wait_key
 
 
 #### wait_key
 
-- [ ] Comprobar buffer circular
-    - [ ] si hay elementos disponibles se devuelve inmediatamente
-    - [ ] si no se bloquea
+- [x] Comprobar buffer circular
+    - [x] si hay elementos disponibles se devuelve inmediatamente
+    - [x] si no se bloquea
 
 
 ##### Buffer circular
@@ -56,8 +56,8 @@ struct Buffercircu
 
 #### block
 
-- [ ] Mueve proceso a la lista de bloqueo
-- [ ] Pasamos al siguiente proceso
+- [x] Mueve proceso a la lista de bloqueo
+- [x] Pasamos al siguiente proceso
 
 ##### Funcionamiento del desbloqueo
 
@@ -67,7 +67,7 @@ comprobando el tick actual con el tick de desbloqueo de cada proceso.
 
 #### unblock
 
-- [ ] mueve el proceso bloqueado a la lista de ready
+- [x] mueve el proceso bloqueado a la lista de ready
 
 
 
