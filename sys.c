@@ -27,6 +27,10 @@ extern struct list_head keyboardqueue;
 
 extern struct circ_buff cb;
 
+extern Byte x, y;
+
+extern Byte color;
+
 unsigned int next_pid = 2;
 
 
@@ -280,4 +284,43 @@ int sys_waitKey(char *b, int timeout)
     // si no hay elementos, devolver error
     return -EAGAIN;
   }
+}
+
+
+int sys_goto_xy(int goto_x, int goto_y)
+{
+  if (goto_x < 0 || goto_x >= NUM_COLUMNS || goto_y < 0 || goto_y >= NUM_ROWS)
+  {
+    return -EINVAL;
+  }
+
+  x = goto_x;
+  y = goto_y;
+
+  return 0;
+}
+
+int sys_change_color(int fg, int bg)
+{
+  if (fg < 0 || fg > 15 || bg < 0 || bg > 7)
+  {
+    return -EINVAL;
+  }
+
+  color = 0 | bg << 4 | fg;
+
+  return 0;
+}
+
+int sys_clrscr(char *b)
+{
+  if (b != NULL)
+  {
+    return -EFAULT;
+  }
+
+  Word *screen = (Word *)0xb8000;
+  copy_data(b, screen, NUM_COLUMNS * NUM_ROWS * 2);
+
+  return 0;
 }

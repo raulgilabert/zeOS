@@ -26,7 +26,7 @@ ENTRY (sys_call_table)
 	.long sys_ni_syscall  // 21
 	.long sys_ni_syscall  // 22
 	.long sys_ni_syscall  // 23
-	.long sys_waitKey    // 24
+	.long sys_waitKey     // 24
 	.long sys_ni_syscall  // 25
 	.long sys_ni_syscall  // 26
 	.long sys_ni_syscall  // 27
@@ -34,9 +34,9 @@ ENTRY (sys_call_table)
 	.long sys_ni_syscall  // 29
 	.long sys_ni_syscall  // 30
 	.long sys_ni_syscall  // 31
-	.long sys_ni_syscall  // 32
-	.long sys_ni_syscall  // 33
-	.long sys_ni_syscall  // 34
+	.long sys_clrscr      // 32
+	.long sys_goto_xy     // 33
+	.long sys_change_color// 34
 	.long sys_get_stats   // 35
 	
 .globl MAX_SYSCALL
