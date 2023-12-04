@@ -70,8 +70,6 @@ void cpu_idle(void)
 
 	while(1)
 	{
-		printc('A');
-		
 	}
 }
 
@@ -155,6 +153,7 @@ void init_sched()
 {
 	INIT_LIST_HEAD(&freequeue);
 	INIT_LIST_HEAD(&readyqueue);
+	INIT_LIST_HEAD(&blocked);
 
 	for (int i = 0; i < NR_TASKS; ++i)
 	{
