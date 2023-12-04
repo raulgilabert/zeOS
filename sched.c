@@ -20,6 +20,10 @@ struct task_struct *list_head_to_task_struct(struct list_head *l)
 struct task_struct *idle_task;
 struct list_head blocked;
 struct list_head freequeue, readyqueue;
+
+// colas de bloqueo necesarias
+struct list_head keyboardqueue;
+
 unsigned long quantum_ticks;
 
 
@@ -70,8 +74,6 @@ void cpu_idle(void)
 
 	while(1)
 	{
-		printc('A');
-		
 	}
 }
 
@@ -155,6 +157,7 @@ void init_sched()
 {
 	INIT_LIST_HEAD(&freequeue);
 	INIT_LIST_HEAD(&readyqueue);
+	INIT_LIST_HEAD(&keyboardqueue);
 
 	for (int i = 0; i < NR_TASKS; ++i)
 	{

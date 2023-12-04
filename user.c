@@ -68,7 +68,7 @@ int __attribute__ ((__section__(".text.main")))
     // llamada a wait_key
 
     char buff;
-    int num = wait_key(&buff, 1);
+    int num = wait_key(&buff, 100);
 
     if (num >= 0)
     {

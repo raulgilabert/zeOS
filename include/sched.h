@@ -24,6 +24,7 @@ struct task_struct {
   unsigned long kernel_esp;
   int quantum;
   enum state_t state;
+  int timeout;
 
   struct stats stats;
 

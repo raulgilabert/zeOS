@@ -19,6 +19,9 @@ Register    idtR;
 
 extern struct task_struct *idle_task;
 extern struct list_head readyqueue;
+
+extern struct list_head keyboardqueue;
+
 extern unsigned long zeos_ticks;
 char char_map[] =
 {
@@ -149,6 +152,36 @@ void clock_routine()
 
   ++zeos_ticks;
 	zeos_show_clock();
+
+  // decrementamos el timeout de los procesos bloqueados de teclado
+  struct list_head *it = list_first(&keyboardqueue);
+
+  list_for_each(it, &keyboardqueue)
+  {
+    struct task_struct *task = list_head_to_task_struct(it);
+    --(task->timeout);
+
+    char buff[16];
+    uitox(task->PID, buff);
+    printk(buff);
+
+    printk(" ");
+
+    char buff2[16];
+    uitox(task->timeout, buff2);
+    printk(buff2);
+ 
+
+    printk("\n");
+
+    // en caso de que sea 0, lo pasamos a ready
+    if (task->timeout == 0)
+    {
+      printk("pasamos a ready\n");
+      update_process_state_rr(task, &readyqueue);
+    }
+  }
+  
 
   schedule();
 }

@@ -23,6 +23,8 @@ extern unsigned long zeos_ticks;
 extern unsigned long quantum_ticks;
 extern struct list_head freequeue, readyqueue;
 
+extern struct list_head keyboardqueue;
+
 extern struct circ_buff cb;
 
 unsigned int next_pid = 2;
@@ -239,6 +241,43 @@ int sys_waitKey(char *b, int timeout)
     return 0;
   }
 
-  // temp
-  return -1;
+  // no hay elementos en el buffer circular de teclado
+  // -------------------------------------------------
+  // si el timeout es 0, devolver error
+  if (timeout == 0)
+  {
+    return -EAGAIN;
+  }
+
+  // si el timeout es -1, bloquear indefinidadmente hasta que haya un elemento en el buffer circular de teclado
+  if (timeout < 0)
+  {
+    // bloquear el proceso
+    update_process_state_rr(current(), &keyboardqueue);
+    sched_next_rr();
+    // cuando se desbloquee, devolver el elemento del buffer circular de teclado
+    *b = cb_next(&cb);
+    return 0;
+  }
+
+  // si el timeout es mayor que 0, bloquear hasta que haya un elemento en el buffer circular de teclado o hasta que se cumpla el timeout
+
+  // bloquear el proceso
+  current()->timeout = timeout;
+
+  update_process_state_rr(current(), &keyboardqueue);
+  sched_next_rr();
+
+  // al desbloquear se comprueba si hay elementos en el buffer circular de teclado
+  if (!cb_empty(&cb))
+  {
+    // si hay elementos, devolver el elemento del buffer circular de teclado
+    *b = cb_next(&cb);
+    return 0;
+  }
+  else
+  {
+    // si no hay elementos, devolver error
+    return -EAGAIN;
+  }
 }

@@ -68,3 +68,53 @@ comprobando el tick actual con el tick de desbloqueo de cada proceso.
 #### unblock
 
 - [ ] mueve el proceso bloqueado a la lista de ready
+
+
+
+
+#### Imprimir texto con colores
+
+Bits del buffer VGA:
+
+15: blink
+14-12: background
+11-8: foreground
+7-0: letra
+
+
+
+```C
+//Variables globales
+char foreground;
+char background;
+
+int changeColor(int fg, int bg)
+{
+
+    foreground = fg%16; 
+    background = bg%8;
+
+}
+
+void printc(char c)
+{
+     __asm__ __volatile__ ( "movb %0, %%al; outb $0xe9" ::"a"(c)); /* Magic BOCHS debug: writes 'c' to port 0xe9 */
+  if (c=='\n')
+  {
+		move_line();
+  }
+  else
+  {
+    Word fg =foreground >> 8; 
+    Word bg = background >> 12;
+    Word ch = (Word) (c & 0x00FF) | fg | bg;
+	Word *screen = (Word *)0xb8000;
+	screen[(y * NUM_COLUMNS + x)] = ch;
+    if (++x >= NUM_COLUMNS)
+			move_line();
+    {
+   }
+  }
+}
+
+```
