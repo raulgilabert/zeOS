@@ -16,7 +16,7 @@
 #### Milestones
 
 - [x] teclado guarda en circular buffer
-- [ ] waitKey
+- [x] waitKey
 - [ ] gotoXY
 - [ ] changeColor & clrscr
 - [ ] create_thread & exit
@@ -28,14 +28,14 @@
 
 
 
-- [ ] wait_key
+- [x] wait_key
 
 
 #### wait_key
 
-- [ ] Comprobar buffer circular
-    - [ ] si hay elementos disponibles se devuelve inmediatamente
-    - [ ] si no se bloquea
+- [x] Comprobar buffer circular
+    - [x] si hay elementos disponibles se devuelve inmediatamente
+    - [x] si no se bloquea
 
 
 ##### Buffer circular
@@ -56,8 +56,8 @@ struct Buffercircu
 
 #### block
 
-- [ ] Mueve proceso a la lista de bloqueo
-- [ ] Pasamos al siguiente proceso
+- [x] Mueve proceso a la lista de bloqueo
+- [x] Pasamos al siguiente proceso
 
 ##### Funcionamiento del desbloqueo
 
@@ -67,4 +67,54 @@ comprobando el tick actual con el tick de desbloqueo de cada proceso.
 
 #### unblock
 
-- [ ] mueve el proceso bloqueado a la lista de ready
+- [x] mueve el proceso bloqueado a la lista de ready
+
+
+
+
+#### Imprimir texto con colores
+
+Bits del buffer VGA:
+
+15: blink
+14-12: background
+11-8: foreground
+7-0: letra
+
+
+
+```C
+//Variables globales
+char foreground;
+char background;
+
+int changeColor(int fg, int bg)
+{
+
+    foreground = fg%16; 
+    background = bg%8;
+
+}
+
+void printc(char c)
+{
+     __asm__ __volatile__ ( "movb %0, %%al; outb $0xe9" ::"a"(c)); /* Magic BOCHS debug: writes 'c' to port 0xe9 */
+  if (c=='\n')
+  {
+		move_line();
+  }
+  else
+  {
+    Word fg =foreground >> 8; 
+    Word bg = background >> 12;
+    Word ch = (Word) (c & 0x00FF) | fg | bg;
+	Word *screen = (Word *)0xb8000;
+	screen[(y * NUM_COLUMNS + x)] = ch;
+    if (++x >= NUM_COLUMNS)
+			move_line();
+    {
+   }
+  }
+}
+
+```
