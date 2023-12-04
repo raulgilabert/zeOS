@@ -314,13 +314,22 @@ int sys_change_color(int fg, int bg)
 
 int sys_clrscr(char *b)
 {
-  if (b != NULL)
-  {
-    return -EFAULT;
-  }
-
   Word *screen = (Word *)0xb8000;
-  copy_data(b, screen, NUM_COLUMNS * NUM_ROWS * 2);
+
+  if (b == NULL)
+  {
+    Word new_screen[NUM_COLUMNS * NUM_ROWS];
+    for (int i = 0; i < NUM_COLUMNS * NUM_ROWS; ++i)
+    {
+      new_screen[i] = 0;
+    }
+
+    copy_data(new_screen, screen, NUM_COLUMNS * NUM_ROWS * 2);
+  }
+  else
+  {
+    copy_data(b, screen, NUM_COLUMNS * NUM_ROWS * 2);
+  }
 
   return 0;
 }

@@ -17,8 +17,10 @@ extern struct circ_buff cb;
 Gate idt[IDT_ENTRIES];
 Register    idtR;
 
+
 extern struct task_struct *idle_task;
 extern struct list_head readyqueue;
+
 
 extern struct list_head keyboardqueue;
 
@@ -149,26 +151,33 @@ void keyboard_routine()
 
 void clock_routine()
 {
+  //printk("pip\n");
 
   ++zeos_ticks;
 	zeos_show_clock();
 
-  // decrementamos el timeout de los procesos bloqueados de teclado
-  struct list_head *it = list_first(&keyboardqueue);
-
-  list_for_each(it, &keyboardqueue)
+  if (!list_empty(&keyboardqueue))
   {
-    struct task_struct *task = list_head_to_task_struct(it);
-    --(task->timeout);
+    // decrementamos el timeout de los procesos bloqueados de teclado
+    struct list_head *it = list_first(&keyboardqueue);
 
-    // en caso de que sea 0, lo pasamos a ready
-    if (task->timeout <= 0)
+    for (; it != &keyboardqueue;)
     {
-      update_process_state_rr(task, &readyqueue);
-      sched_next_rr();
+      struct task_struct *task = list_head_to_task_struct(it);
+      --(task->timeout);
+
+      it = it->next;
+
+      // en caso de que sea 0, lo pasamos a ready
+      if (task->timeout == 0)
+      {
+        //printk("es 0\n");
+        update_process_state_rr(task, &readyqueue);
+        //sched_next_rr(); Esto no se debería hacer aquí
+      }
     }
-  }
-  
+  }    
+  //printk("E");
 
   schedule();
 }

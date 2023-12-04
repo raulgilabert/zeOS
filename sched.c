@@ -215,7 +215,11 @@ void sched_next_rr()
 void update_process_state_rr(struct task_struct *t, struct list_head *dest)
 {
 
-	if(!(t->list.next == NULL && t->list.prev ==NULL)) list_del(&(t->list));
+	if(!(t->list.next == NULL && t->list.prev ==NULL))
+	{
+		list_del(&(t->list));
+	}
+
 	if (dest != NULL)
 	{	
 		if (t->PID != 0)
@@ -223,15 +227,15 @@ void update_process_state_rr(struct task_struct *t, struct list_head *dest)
 			list_add_tail(&(t->list), dest);
 		}
 	}
-
 }
 
 int needs_sched_rr()
 {
 	// todavía no se ha llegado al quantum
 	if (quantum_ticks > 0)
+	{
 		return 0;
-
+	}
 	current()->stats.total_trans++;
 	// no quedan otros procesos en ready
 	if (list_empty(&readyqueue))
