@@ -25,9 +25,17 @@ struct task_struct {
   int quantum;
   enum state_t state;
   int timeout;
+  int threads_qtt;
 
   struct stats stats;
 };
+
+/*
+struct thread_struct {
+  int TID;
+
+
+};*/
 
 union task_union {
   struct task_struct task;

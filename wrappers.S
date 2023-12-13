@@ -248,3 +248,39 @@ wait_key_end:
     
     popl %ebp
     ret
+
+ENTRY(threadCreateWithStack)
+    pushl %ebp
+    movl %esp, %ebp
+    
+    pushl %ebx
+    pushl %edx
+    pushl %ecx
+    
+    movl 0x08(%ebp), %edx
+    movl 0x0c(%ebp), %ecx
+    movl 0x10(%ebp), %ebx
+
+    movl $30, %eax
+
+    int $0x80
+
+    popl %ecx
+    popl %edx
+    popl %ebx
+    /* 
+    *  Si %eax >= 0 -> todo correcto
+    *  Si %eax < 0 -> ha habido un error
+    */
+    cmpl $0, %eax
+    jge thread_create_end
+
+    negl %eax
+    movl %eax, errno
+    movl $-1, %eax
+
+thread_create_end:
+
+    popl %ebp
+    ret
+

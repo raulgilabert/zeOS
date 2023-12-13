@@ -80,7 +80,7 @@ int sys_fork()
   struct task_struct  *current_struct = current();
   union task_union *current_union = (union task_union *)current_struct;
 
-  // copia de los datos de la pila
+  // copia de los datos de la pila de sistema
   copy_data(current_union, new_union, KERNEL_STACK_SIZE*4);
 
   // asignar espacio de directorio
@@ -119,14 +119,17 @@ int sys_fork()
 
   for (int i = 0; i < NUM_PAG_CODE; ++i)
   {
-    set_ss_pag(new_page_table, PAG_LOG_INIT_CODE + i, get_frame(current_page_table, PAG_LOG_INIT_CODE + i));
+    set_ss_pag(new_page_table, PAG_LOG_INIT_CODE + i, 
+               get_frame(current_page_table, PAG_LOG_INIT_CODE + i));
   }
 
   for (int i = 0; i < NUM_PAG_DATA; ++i)
   {
-    set_ss_pag(current_page_table, TOTAL_PAGES - NUM_PAG_DATA + i, get_frame(new_page_table, PAG_LOG_INIT_DATA + i));
+    set_ss_pag(current_page_table, TOTAL_PAGES - NUM_PAG_DATA + i, 
+               get_frame(new_page_table, PAG_LOG_INIT_DATA + i));
 
-    copy_data((void *)((PAG_LOG_INIT_DATA + i) << 12), (void *)((TOTAL_PAGES - NUM_PAG_DATA + i) << 12), PAGE_SIZE);
+    copy_data((void *)((PAG_LOG_INIT_DATA + i) << 12), 
+              (void *)((TOTAL_PAGES - NUM_PAG_DATA + i) << 12), PAGE_SIZE);
 
     del_ss_pag(current_page_table, TOTAL_PAGES - NUM_PAG_DATA + i);
   }
@@ -142,6 +145,7 @@ int sys_fork()
   PID=next_pid++;
   new_struct->PID= PID;
   new_struct->state = ST_READY;
+  new_struct->threads_qtt = 1;
 
   initialize_stats(new_struct);
 
@@ -154,13 +158,18 @@ void sys_exit()
 {  
   struct task_struct *proc = current();
 
+  proc->threads_qtt--;
+
   // eliminar la memoria allocada para datos
   page_table_entry *exit_proc_page_table = get_PT(proc);
 
-  for (int i = 0; i < NUM_PAG_DATA; ++i)
+  if (proc->threads_qtt == 0)
   {
-    free_frame(get_frame(exit_proc_page_table, PAG_LOG_INIT_DATA + i));
-    del_ss_pag(exit_proc_page_table, PAG_LOG_INIT_DATA + i);
+    for (int i = 0; i < NUM_PAG_DATA; ++i)
+    {
+      free_frame(get_frame(exit_proc_page_table, PAG_LOG_INIT_DATA + i));
+      del_ss_pag(exit_proc_page_table, PAG_LOG_INIT_DATA + i);
+    }
   }
 
   // liberar estructuras de datos del proceso
@@ -339,4 +348,157 @@ int sys_clrscr(char *b)
   }
 
   return 0;
+}
+
+int sys_thread_create_with_stack(void (*function)(void *arg), int N, void* parameter)
+{
+
+  if (N <= 0) // Tiene que tener stack
+  {
+    return -EINVAL;
+  }
+
+  // comprobar que quedan tasks libres
+  if (list_empty(&freequeue))
+  {
+    return -ENOMEM;
+  }
+
+  current()->threads_qtt++;
+
+  // Pillamos el task_struct si quedan disponibles
+  struct list_head *first = list_first(&freequeue);
+  struct task_struct *new_struct = list_head_to_task_struct(first);
+
+  list_del(first);
+
+  union task_union *new_union = (union task_union *) new_struct;
+
+  // copia de los datos de la pila de sistema
+  copy_data((union task_union *)current(), new_union, KERNEL_STACK_SIZE*4);
+
+
+  new_struct->PID = current()->PID; // usamos el mismo PID que el proceso padre
+
+  // usamos el mismo directorio que el proceso padre
+  new_struct->dir_pages_baseAddr = current()->dir_pages_baseAddr;
+
+  // copia de las tablas de páginas
+  page_table_entry *pag_table = get_PT(new_struct);
+  page_table_entry *parent_pag_table = get_PT(current());
+
+  // copia de todas las páginas de la tabla padre a la hija a la vez que se busca N páginas
+  // consecutivas disponibles
+  int num_consecutives = 0;
+  int first_consecutive = -1;
+  int new_frame;
+  int found = 0;
+
+  for (int i = 0; i < TOTAL_PAGES; ++i)
+  {
+    if (!found)
+    {
+      if (pag_table[i].bits.present == 0)
+      {
+        if (num_consecutives == 0)
+        {
+          first_consecutive = i;
+        }
+        if (++num_consecutives == N)
+        {
+          found = 1;
+        }
+      }
+      else
+      {
+        num_consecutives = 0;
+      }
+    }
+  }
+
+  if (!found) // mo hay páginas disponibles para el stack
+  {
+    list_add_tail(first, &freequeue);
+    return -ENOMEM;
+  }
+
+  // allocatar las N páginas consecutivas
+  for (int i = 0; i < N; ++i)
+  {
+    new_frame = alloc_frame();
+    if (new_frame != -1)
+    {
+      set_ss_pag(pag_table, first_consecutive + i, new_frame);
+    }
+    else // dealocatar todo si no queda memoria física
+    {
+      // hacemos el bucle hacia atrás
+      for (; i >= 0; --i)
+      {
+        free_frame(get_frame(pag_table, first_consecutive + i));
+        del_ss_pag(pag_table, first_consecutive + i);
+      }
+      list_add_tail(first, &freequeue);
+      return -ENOMEM;
+    }
+  }
+
+
+  // configuración de la pila de sistema
+  new_struct->kernel_esp = (unsigned long)&new_union->stack[KERNEL_STACK_SIZE - 0x12];
+
+  // reescribir contexto hardware
+  /*
+  |--------|
+  | EIP    | <- sobreescribimos con la nueva función
+  |--------|
+  | CS     | 
+  |--------|
+  | FLAGS  |
+  |--------|
+  | ESP    | <- sobreescribvimos con la nueva pila
+  |--------|
+  | SS     |
+  |--------| 
+  */
+
+  //new_union->stack[KERNEL_STACK_SIZE - 0x2] = (unsigned long) parameter;
+
+/*
+
+
+
+%ebp
+@ret
+param1
+*/
+
+/*
+
+
+
+%ebp
+param1
+*/
+
+
+
+  unsigned long *user_stack = (first_consecutive) << 12;
+  user_stack[N*1024 - 1] = (unsigned long) parameter;
+  user_stack[N*1024 - 2] = (unsigned long) function;
+
+
+  new_union->stack[KERNEL_STACK_SIZE - 0x2] = (unsigned long) (user_stack + N*1024 - 2);
+
+  new_union->stack[KERNEL_STACK_SIZE - 0x5] = (unsigned long) function;
+
+  update_process_state_rr(new_struct, &readyqueue);
+
+  // añadir elementos a la pila de usuario
+
+
+  printk("a");
+
+  return 0;
+
 }

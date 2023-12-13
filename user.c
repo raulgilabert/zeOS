@@ -52,6 +52,15 @@ void imprimir_datos(int in_pid)
   write(1, "\n--------------------\n", 22);
 }
 
+void prueba(char* a)
+{
+  write(1, "Hola, soy el proceso ", 22);
+  write(1, a, strlen(a));
+  write(1, "\n", 1);
+
+  exit();
+}
+
 int __attribute__ ((__section__(".text.main")))
   main(void)
 {
@@ -59,18 +68,34 @@ int __attribute__ ((__section__(".text.main")))
      privileged one, and so it will raise an exception */
   /* __asm__ __volatile__ ("mov %0, %%cr3":: "r" (0) ); */
 
+  write(1, "\n> ", 3);
+
+  char *a = "a";
+
+  int ret = threadCreateWithStack(prueba, 1, a);
+
   while(1) {
     char buff;
 
-    
     int num = wait_key(&buff, 100);
+
 
     if (num >= 0)
     {
-/*      write(1, "Se ha pulsado la tecla: ", 24);
       write(1, &buff, 1);
+      if (buff == '\n')
+      {
+        write(1, "> ", 2);
+      }
+/*      char buff2[16];
+      for(int i = 0; i < 16; ++i) buff2[i] = 0;
+      itoa(buff, buff2);
+      write(1, "Se ha pulsado la tecla: ", 24);
+      write(1, buff2, strlen(buff2));
       write(1, "\n", 1);
-*/
+
+      
+
       if (buff == 'a' || buff == 'A')
       {
         char new_screen[80*25*2];
@@ -87,6 +112,13 @@ int __attribute__ ((__section__(".text.main")))
       {
         clrscr(0);
       }
+
+      else if(buff == 'x' || buff == 'X')
+      {
+        goto_xy(0, 0);
+      }*/
+
+
 
 /*      char buff2[16];
       for(int i = 0; i < 16; ++i) buff2[i] = 0;
