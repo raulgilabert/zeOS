@@ -28,9 +28,9 @@ extern unsigned long zeos_ticks;
 char char_map[] =
 {
   '\0','\0','1','2','3','4','5','6',
-  '7','8','9','0','\'','¡','\0','\0',
+  '7','8','9','0','\'','¡','\b','\0',
   'q','w','e','r','t','y','u','i',
-  'o','p','`','+','\0','\0','a','s',
+  'o','p','`','+','\n','\0','a','s',
   'd','f','g','h','j','k','l','ñ',
   '\0','º','\0','ç','z','x','c','v',
   'b','n','m',',','.','-','\0','*',
@@ -132,6 +132,8 @@ void keyboard_routine()
 		unsigned char key_value = char_map[key_read & 0x7F];
 
     cb_add(&cb, key_value);
+
+
 
     // si hay procesos bloqueados por teclado se pasa el primero a ready
     if (!list_empty(&keyboardqueue))

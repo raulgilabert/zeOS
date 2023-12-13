@@ -125,6 +125,7 @@ void init_task1(void)
 	init_struct->PID = 1;
 	set_quantum(init_struct, QUANTUM);
 	init_struct->state = ST_RUN;
+	init_struct->threads_qtt = 1;
 
 	initialize_stats(init_struct);
 
