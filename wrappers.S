@@ -390,6 +390,58 @@ semDestroy_end:
     ret
 
 
+ENTRY(memRegGet)
+    push %ebp
+	mov %esp,%ebp
+
+    pushl %edx
+    
+    movl 0x08(%ebp), %edx
+
+	movl $21, %eax
+
+    int $0x80
+
+    popl %edx
+
+    cmpl $0, %eax
+    jge memRegGet_end
+
+    negl %eax
+    movl %eax, errno
+    movl $-1, %eax
+
+memRegGet_end:
+
+    popl %ebp
+    ret
+
+ENTRY(memRegDel)
+    push %ebp
+	mov %esp,%ebp
+
+    pushl %edx
+    
+    movl 0x08(%ebp), %edx
+
+	movl $22, %eax
+
+    int $0x80
+
+    popl %edx
+
+    cmpl $0, %eax
+    jge memRegDel_end
+
+    negl %eax
+    movl %eax, errno
+    movl $-1, %eax
+
+memRegDel_end:
+
+    popl %ebp
+    ret
+
 
 
 

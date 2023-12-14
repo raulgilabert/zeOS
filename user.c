@@ -118,6 +118,32 @@ int __attribute__ ((__section__(".text.main")))
     write(1, "No se ha destruido el semaforo\n", 30);
   }
 
+  write(1, "probamos a allocatar memoria dinámica\n", 38);
+  char *b = memRegGet(1);
+
+  if (b == 0)
+  {
+    write(1, "No se ha podido allocatar memoria\n", 34);
+  }
+  else
+  {
+    write(1, "Se ha podido allocatar memoria\n", 32);
+  }
+
+  for (int i = 0; i < 4096; ++i)
+  {
+    b[i] = 'a';
+  }
+
+  write(1, "Se ha escrito en la memoria\n", 28);
+
+  // prueba, debería dar pagefault
+  //b[4096] = 'a';
+
+  write(1, "prueba a deallocatar memoria dinámica\n", 38);
+  memRegDel(b);
+
+  write(1, "Se ha deallocatado memoria\n", 28);
 
 
   while(1) {

@@ -23,8 +23,8 @@ ENTRY (sys_call_table)
 	.long sys_ni_syscall  // 18
 	.long sys_ni_syscall  // 19
 	.long sys_getpid	  // 20
-	.long sys_ni_syscall  // 21
-	.long sys_ni_syscall  // 22
+	.long sys_mem_reg_get // 21
+	.long sys_mem_reg_del // 22
 	.long sys_ni_syscall  // 23
 	.long sys_waitKey     // 24
 	.long sys_sem_create  // 25

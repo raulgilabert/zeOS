@@ -21,7 +21,7 @@
 - [X] changeColor & clrscr
 - [X] create_thread & exit
 - [X] sync
-- [ ] memRegGet & memRegDel
+- [X] memRegGet & memRegDel
 - [ ] jueginho
 - [ ] allocator a user
 
