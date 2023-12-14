@@ -17,13 +17,13 @@
 
 - [x] teclado guarda en circular buffer
 - [x] waitKey
-- [ ] gotoXY
-- [ ] changeColor & clrscr
-- [ ] create_thread & exit
-- [ ] sync
-- [ ] memRegGet & memRegDel
+- [X] gotoXY
+- [X] changeColor & clrscr
+- [X] create_thread & exit
+- [X] sync
+- [X] memRegGet & memRegDel
 - [ ] jueginho
-- [ ] allocator a user
+- [ ] slab allocator a user ( dudo que lo haga y es opcional)
 
 
 

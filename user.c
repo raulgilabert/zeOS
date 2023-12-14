@@ -1,4 +1,6 @@
 #include <libc.h>
+#include <sem.h>
+#include <game.h>
 
 int
 add(int par1, int par2)
@@ -52,11 +54,28 @@ void imprimir_datos(int in_pid)
   write(1, "\n--------------------\n", 22);
 }
 
-void prueba(char* a)
+struct data {
+  char* a;
+  sem_t* sem;
+};
+
+void prueba(struct data* data_thread)
 {
+  semWait(data_thread->sem);
   write(1, "Hola, soy el proceso ", 22);
-  write(1, a, strlen(a));
+  write(1, data_thread->a, strlen(data_thread->a));
   write(1, "\n", 1);
+
+  int res = semDestroy(data_thread->sem);
+
+  if (res == 0)
+  {
+    write(1, "Se ha destruido el semaforo\n", 28);
+  }
+  else
+  {
+    write(1, "No se ha destruido el semaforo\n", 30);
+  }
 
   exit();
 }
@@ -68,11 +87,70 @@ int __attribute__ ((__section__(".text.main")))
      privileged one, and so it will raise an exception */
   /* __asm__ __volatile__ ("mov %0, %%cr3":: "r" (0) ); */
 
+  game();
+
+  while (1);
+
+/*
   write(1, "\n> ", 3);
 
   char *a = "a";
 
-  int ret = threadCreateWithStack(prueba, 1, a);
+  struct data data_thread;
+  data_thread.a = a;
+  data_thread.sem = semCreate(1);
+
+  semWait(data_thread.sem);
+  int ret = threadCreateWithStack(prueba, 1, &data_thread);
+
+  write(1, "he creado el thread\n", 20);
+
+  espera_larga();
+
+  write(1, "he salido de la espera larga\n", 29);
+
+  semSignal(data_thread.sem);
+
+  espera_larga();
+
+  int res = semDestroy(data_thread.sem);
+
+  if (res == 0)
+  {
+    write(1, "Se ha destruido el semaforo\n", 28);
+  }
+  else
+  {
+    write(1, "No se ha destruido el semaforo\n", 30);
+  }
+
+  write(1, "probamos a allocatar memoria dinámica\n", 38);
+  char *b = memRegGet(1);
+
+  if (b == 0)
+  {
+    write(1, "No se ha podido allocatar memoria\n", 34);
+  }
+  else
+  {
+    write(1, "Se ha podido allocatar memoria\n", 32);
+  }
+
+  for (int i = 0; i < 4096; ++i)
+  {
+    b[i] = 'a';
+  }
+
+  write(1, "Se ha escrito en la memoria\n", 28);
+
+  // prueba, debería dar pagefault
+  //b[4096] = 'a';
+
+  write(1, "prueba a deallocatar memoria dinámica\n", 38);
+  memRegDel(b);
+
+  write(1, "Se ha deallocatado memoria\n", 28);
+
 
   while(1) {
     char buff;
@@ -116,7 +194,7 @@ int __attribute__ ((__section__(".text.main")))
       else if(buff == 'x' || buff == 'X')
       {
         goto_xy(0, 0);
-      }*/
+      }*
 
 
 
@@ -125,11 +203,11 @@ int __attribute__ ((__section__(".text.main")))
       itoa(getpid(), buff2);
       write(1, "PID: ", 5);
       write(1, buff2, strlen(buff2));
-      write(1, "\n", 1);*/
+      write(1, "\n", 1);*
     }
     else
     {
       //write(1, "No se ha pulsado ninguna tecla\n", 31);
     }
-  }
+  }*/
 }

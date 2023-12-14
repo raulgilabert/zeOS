@@ -46,6 +46,7 @@ USROBJ = \
 	suma.o \
 	wrappers.o \
 	espera.o \
+	game.o \
 	# libjp.a \
 
 all:zeos.bin
@@ -85,6 +86,8 @@ espera.s: espera.S $(INCLUDEDIR)/asm.h
 	$(CPP) $(ASMFLAGS) -o $@ $<
 
 circ_buff.o: circ_buff.c $(INCLUDEDIR)/circ_buff.h
+
+game.o: game.c $(INCLUDEDIR)/game.h
 
 
 sys_libc.o:sys_libc.c $(INCLUDEDIR)/sys_libc.h

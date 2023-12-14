@@ -126,6 +126,8 @@ void init_task1(void)
 	set_quantum(init_struct, QUANTUM);
 	init_struct->state = ST_RUN;
 	init_struct->threads_qtt = 1;
+	init_struct->stack_size = 1;
+	init_struct->base_stack = PAG_LOG_INIT_DATA;
 
 	initialize_stats(init_struct);
 

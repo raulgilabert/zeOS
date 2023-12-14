@@ -17,6 +17,8 @@
 
 #include <circ_buff.h>
 
+#include <sem.h>
+
 #define LECTURA 0
 #define ESCRIPTURA 1
 extern unsigned long zeos_ticks;
@@ -32,6 +34,9 @@ extern Byte x, y;
 extern Byte color;
 
 unsigned int next_pid = 2;
+
+sem_t semaforos[MAX_SEMAFOROS];
+
 
 
 int ret_from_fork()
@@ -169,6 +174,13 @@ void sys_exit()
     {
       free_frame(get_frame(exit_proc_page_table, PAG_LOG_INIT_DATA + i));
       del_ss_pag(exit_proc_page_table, PAG_LOG_INIT_DATA + i);
+    }
+  }
+  else {
+    for (int i = 0; i < proc->stack_size; ++i)
+    {
+      free_frame(get_frame(exit_proc_page_table, proc->base_stack + i));
+      del_ss_pag(exit_proc_page_table, proc->base_stack + i);
     }
   }
 
@@ -337,12 +349,12 @@ int sys_clrscr(char *b)
   }
   else
   {
-    for (int i = 0; i < NUM_COLUMNS * 2; i+=2)
+    for (int i = 0; i < NUM_COLUMNS; i++)
     {
       for (int j = 0; j < NUM_ROWS; ++j)
       {
-        screen[j * NUM_COLUMNS + i/2] = (b[j * NUM_COLUMNS + i + 1] << 8) | 
-                                         b[j * NUM_COLUMNS + i];
+        screen[j * NUM_COLUMNS + i] = (b[(j * NUM_COLUMNS + i)*2 + 1] << 8) | 
+                                         b[(j * NUM_COLUMNS + i)*2];
       }
     }
   }
@@ -487,6 +499,9 @@ param1
   user_stack[N*1024 - 1] = (unsigned long) parameter;
   user_stack[N*1024 - 2] = (unsigned long) function;
 
+  new_struct->base_stack = user_stack;
+  new_struct->stack_size = N;
+
 
   new_union->stack[KERNEL_STACK_SIZE - 0x2] = (unsigned long) (user_stack + N*1024 - 2);
 
@@ -501,4 +516,206 @@ param1
 
   return 0;
 
+}
+
+
+sem_t* sys_sem_create(int initial_value) {
+  // comprobamos que initial_value no es negativo
+  if (initial_value < 0)
+  {
+    return NULL;
+  }
+
+  // comprobamos que quedan semáforos libres
+  int i;
+  for (i = 0; i < MAX_SEMAFOROS; ++i)
+  {
+    if (semaforos[i].owner == NULL)
+    {
+      break;
+    }
+  }
+
+  if (i == MAX_SEMAFOROS)
+  {
+    return NULL;
+  }
+
+  // inicializamos el semáforo
+  semaforos[i].value = initial_value;
+  semaforos[i].owner = current();
+
+  INIT_LIST_HEAD(&semaforos[i].blocked);
+
+  return &semaforos[i];
+}
+
+
+int sys_sem_wait(sem_t* s)
+{
+  // comprobamos que el semáforo no es nulo
+  if (s == NULL)
+  {
+    return -EINVAL;
+  }
+
+  // decrementamos el contador del semáforo
+  s->value--;
+
+  // si el contador es negativo, bloqueamos el proceso
+  if (s->value < 0)
+  {
+    update_process_state_rr(current(), &s->blocked);
+    sched_next_rr();
+  }
+
+  return 0;
+}
+
+int sys_sem_signal(sem_t* s)
+{
+  // comprobamos que el semáforo no es nulo
+  if (s == NULL)
+  {
+    return -EINVAL;
+  }
+
+  // incrementamos el contador del semáforo
+  s->value++;
+
+  // si el contador es negativo, desbloqueamos el primer proceso bloqueado
+  if (s->value <= 0)
+  {
+    struct list_head *first = list_first(&s->blocked);
+    struct task_struct *new_task = list_head_to_task_struct(first);
+    update_process_state_rr(new_task, &readyqueue);
+  }
+
+  return 0;
+}
+
+int sys_sem_destroy(sem_t* s)
+{
+  // comprobamos que el semáforo no es nulo
+  if (s == NULL)
+  {
+    return -EINVAL;
+  }
+
+  // comprobamos que el semáforo pertenece al proceso actual
+  if (s->owner != current())
+  {
+    return -EPERM;
+  }
+
+  // comprobamos que no hay procesos bloqueados
+  if (!list_empty(&s->blocked))
+  {
+    return -EBUSY;
+  }
+
+  // liberamos el semáforo
+  s->owner = NULL;
+
+  return 0;
+}
+
+
+char* sys_mem_reg_get(int num_pages)
+{
+  // allocata num_pages páginas consecutivas en el espacio de usuario
+  // devolver la dirección virtual de la primera página
+  // si no hay suficiente memoria, devolver NULL
+
+  // comprobar que num_pages es positivo
+  if (num_pages <= 0)
+  {
+    return NULL;
+  }
+
+  // comprobar que quedan páginas libres
+  int num_consecutives = 0;
+  int first_consecutive = -1;
+  int found = 0;
+
+  page_table_entry *pag_table = get_PT(current());
+
+  for (int i = 0; i < TOTAL_PAGES; ++i)
+  {
+    if (!found)
+    {
+      if (pag_table[i].bits.present == 0)
+      {
+        if (num_consecutives == 0)
+        {
+          first_consecutive = i;
+        }
+        if (++num_consecutives == num_pages)
+        {
+          found = 1;
+        }
+      }
+      else
+      {
+        num_consecutives = 0;
+      }
+    }
+  }
+
+  if (!found) // mo hay páginas disponibles para el stack
+  {
+    return NULL;
+  }
+
+  // allocatar las N páginas consecutivas
+  for (int i = 0; i <= num_pages; ++i)
+  {
+    int new_frame = alloc_frame();
+    if (new_frame != -1)
+    {
+      set_ss_pag(pag_table, first_consecutive + i, new_frame);
+    }
+    else // dealocatar todo si no queda memoria física
+    {
+      // hacemos el bucle hacia atrás
+      for (; i >= 0; --i)
+      {
+        free_frame(get_frame(pag_table, first_consecutive + i));
+        del_ss_pag(pag_table, first_consecutive + i);
+      }
+      return NULL;
+    }
+  }
+
+  ((int *)first_consecutive)[0] = num_pages;
+
+  return (char *)((first_consecutive + 1) << 12);
+}
+
+
+int sys_mem_reg_del(char* m)
+{
+  // elimina la región previamente allocatada en m liberando todos los recursos
+  // si m no es una dirección válida, devolver -1
+
+  // comprobar que m es una dirección válida
+  if (get_frame(get_PT(current()), (unsigned long)m >> 12) == -1)
+  {
+    return -EINVAL;
+  }
+
+  // liberar las páginas
+  page_table_entry *pag_table = get_PT(current());
+
+  int *full_pages = (int *)(((unsigned long)m >> 12) + 1);
+
+  int pages_to_dealloc = full_pages[0];
+
+  for (int i = 0; i < pages_to_dealloc; ++i)
+  {
+    free_frame(get_frame(pag_table, ((unsigned long)m >> 12) - 1 + i));
+    del_ss_pag(pag_table, ((unsigned long)m >> 12) - 1 + i);
+  }
+
+  return 0;
 }
