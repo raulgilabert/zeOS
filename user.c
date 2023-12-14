@@ -1,5 +1,6 @@
 #include <libc.h>
 #include <sem.h>
+#include <game.h>
 
 int
 add(int par1, int par2)
@@ -86,6 +87,11 @@ int __attribute__ ((__section__(".text.main")))
      privileged one, and so it will raise an exception */
   /* __asm__ __volatile__ ("mov %0, %%cr3":: "r" (0) ); */
 
+  game();
+
+  while (1);
+
+/*
   write(1, "\n> ", 3);
 
   char *a = "a";
@@ -188,7 +194,7 @@ int __attribute__ ((__section__(".text.main")))
       else if(buff == 'x' || buff == 'X')
       {
         goto_xy(0, 0);
-      }*/
+      }*
 
 
 
@@ -197,11 +203,11 @@ int __attribute__ ((__section__(".text.main")))
       itoa(getpid(), buff2);
       write(1, "PID: ", 5);
       write(1, buff2, strlen(buff2));
-      write(1, "\n", 1);*/
+      write(1, "\n", 1);*
     }
     else
     {
       //write(1, "No se ha pulsado ninguna tecla\n", 31);
     }
-  }
+  }*/
 }

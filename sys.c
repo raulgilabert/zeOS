@@ -349,12 +349,12 @@ int sys_clrscr(char *b)
   }
   else
   {
-    for (int i = 0; i < NUM_COLUMNS * 2; i+=2)
+    for (int i = 0; i < NUM_COLUMNS; i++)
     {
       for (int j = 0; j < NUM_ROWS; ++j)
       {
-        screen[j * NUM_COLUMNS + i/2] = (b[j * NUM_COLUMNS + i + 1] << 8) | 
-                                         b[j * NUM_COLUMNS + i];
+        screen[j * NUM_COLUMNS + i] = (b[(j * NUM_COLUMNS + i)*2 + 1] << 8) | 
+                                         b[(j * NUM_COLUMNS + i)*2];
       }
     }
   }
@@ -559,19 +559,12 @@ int sys_sem_wait(sem_t* s)
     return -EINVAL;
   }
 
-  // comprobamos que el semáforo pertenece al proceso actual
-  if (s->owner != current())
-  {
-    return -EPERM;
-  }
-
   // decrementamos el contador del semáforo
   s->value--;
 
   // si el contador es negativo, bloqueamos el proceso
   if (s->value < 0)
   {
-    printk("mebloqueo");
     update_process_state_rr(current(), &s->blocked);
     sched_next_rr();
   }
@@ -585,12 +578,6 @@ int sys_sem_signal(sem_t* s)
   if (s == NULL)
   {
     return -EINVAL;
-  }
-
-  // comprobamos que el semáforo pertenece al proceso actual
-  if (s->owner != current())
-  {
-    return -EPERM;
   }
 
   // incrementamos el contador del semáforo

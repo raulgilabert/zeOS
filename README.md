@@ -23,7 +23,7 @@
 - [X] sync
 - [X] memRegGet & memRegDel
 - [ ] jueginho
-- [ ] allocator a user
+- [ ] slab allocator a user ( dudo que lo haga y es opcional)
 
 
 
