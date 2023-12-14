@@ -17,6 +17,8 @@
 
 #include <circ_buff.h>
 
+#include <sem.h>
+
 #define LECTURA 0
 #define ESCRIPTURA 1
 extern unsigned long zeos_ticks;
@@ -32,6 +34,9 @@ extern Byte x, y;
 extern Byte color;
 
 unsigned int next_pid = 2;
+
+sem_t semaforos[MAX_SEMAFOROS];
+
 
 
 int ret_from_fork()
@@ -169,6 +174,13 @@ void sys_exit()
     {
       free_frame(get_frame(exit_proc_page_table, PAG_LOG_INIT_DATA + i));
       del_ss_pag(exit_proc_page_table, PAG_LOG_INIT_DATA + i);
+    }
+  }
+  else {
+    for (int i = 0; i < proc->stack_size; ++i)
+    {
+      free_frame(get_frame(exit_proc_page_table, proc->base_stack + i));
+      del_ss_pag(exit_proc_page_table, proc->base_stack + i);
     }
   }
 
@@ -487,6 +499,9 @@ param1
   user_stack[N*1024 - 1] = (unsigned long) parameter;
   user_stack[N*1024 - 2] = (unsigned long) function;
 
+  new_struct->base_stack = user_stack;
+  new_struct->stack_size = N;
+
 
   new_union->stack[KERNEL_STACK_SIZE - 0x2] = (unsigned long) (user_stack + N*1024 - 2);
 
@@ -501,4 +516,119 @@ param1
 
   return 0;
 
+}
+
+
+sem_t* sys_sem_create(int initial_value) {
+  // comprobamos que initial_value no es negativo
+  if (initial_value < 0)
+  {
+    return NULL;
+  }
+
+  // comprobamos que quedan semáforos libres
+  int i;
+  for (i = 0; i < MAX_SEMAFOROS; ++i)
+  {
+    if (semaforos[i].owner == NULL)
+    {
+      break;
+    }
+  }
+
+  if (i == MAX_SEMAFOROS)
+  {
+    return NULL;
+  }
+
+  // inicializamos el semáforo
+  semaforos[i].value = initial_value;
+  semaforos[i].owner = current();
+
+  INIT_LIST_HEAD(&semaforos[i].blocked);
+
+  return &semaforos[i];
+}
+
+
+int sys_sem_wait(sem_t* s)
+{
+  // comprobamos que el semáforo no es nulo
+  if (s == NULL)
+  {
+    return -EINVAL;
+  }
+
+  // comprobamos que el semáforo pertenece al proceso actual
+  if (s->owner != current())
+  {
+    return -EPERM;
+  }
+
+  // decrementamos el contador del semáforo
+  s->value--;
+
+  // si el contador es negativo, bloqueamos el proceso
+  if (s->value < 0)
+  {
+    printk("mebloqueo");
+    update_process_state_rr(current(), &s->blocked);
+    sched_next_rr();
+  }
+
+  return 0;
+}
+
+int sys_sem_signal(sem_t* s)
+{
+  // comprobamos que el semáforo no es nulo
+  if (s == NULL)
+  {
+    return -EINVAL;
+  }
+
+  // comprobamos que el semáforo pertenece al proceso actual
+  if (s->owner != current())
+  {
+    return -EPERM;
+  }
+
+  // incrementamos el contador del semáforo
+  s->value++;
+
+  // si el contador es negativo, desbloqueamos el primer proceso bloqueado
+  if (s->value <= 0)
+  {
+    struct list_head *first = list_first(&s->blocked);
+    struct task_struct *new_task = list_head_to_task_struct(first);
+    update_process_state_rr(new_task, &readyqueue);
+  }
+
+  return 0;
+}
+
+int sys_sem_destroy(sem_t* s)
+{
+  // comprobamos que el semáforo no es nulo
+  if (s == NULL)
+  {
+    return -EINVAL;
+  }
+
+  // comprobamos que el semáforo pertenece al proceso actual
+  if (s->owner != current())
+  {
+    return -EPERM;
+  }
+
+  // comprobamos que no hay procesos bloqueados
+  if (!list_empty(&s->blocked))
+  {
+    return -EBUSY;
+  }
+
+  // liberamos el semáforo
+  s->owner = NULL;
+
+  return 0;
 }

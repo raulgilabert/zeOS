@@ -28,6 +28,8 @@ struct task_struct {
   int threads_qtt;
 
   struct stats stats;
+  unsigned long *base_stack;
+  int stack_size;
 };
 
 /*

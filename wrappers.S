@@ -284,3 +284,117 @@ thread_create_end:
     popl %ebp
     ret
 
+
+ENTRY(semCreate)
+    push %ebp
+	mov %esp,%ebp
+
+    pushl %edx
+    
+    movl 0x08(%ebp), %edx
+
+	movl $25, %eax
+
+    int $0x80
+
+    popl %edx
+
+    cmpl $0, %eax
+    jge semCreate_end
+
+    negl %eax
+    movl %eax, errno
+    movl $-1, %eax
+
+semCreate_end:
+
+    popl %ebp
+    ret
+
+ENTRY(semWait)
+    push %ebp
+	mov %esp,%ebp
+
+    pushl %edx
+    
+    movl 0x08(%ebp), %edx
+
+	movl $26, %eax
+
+    int $0x80
+
+    popl %edx
+
+    cmpl $0, %eax
+    jge semWait_end
+
+    negl %eax
+    movl %eax, errno
+    movl $-1, %eax
+
+semWait_end:
+
+    popl %ebp
+    ret
+
+ENTRY(semSignal)
+    push %ebp
+	mov %esp,%ebp
+
+    pushl %edx
+    
+    movl 0x08(%ebp), %edx
+
+	movl $27, %eax
+
+    int $0x80
+
+    popl %edx
+
+    cmpl $0, %eax
+    jge semSignal_end
+
+    negl %eax
+    movl %eax, errno
+    movl $-1, %eax
+
+semSignal_end:
+
+    popl %ebp
+    ret
+
+ENTRY(semDestroy)
+    push %ebp
+	mov %esp,%ebp
+
+    pushl %edx
+    
+    movl 0x08(%ebp), %edx
+
+	movl $28, %eax
+
+    int $0x80
+
+    popl %edx
+
+    cmpl $0, %eax
+    jge semDestroy_end
+
+    negl %eax
+    movl %eax, errno
+    movl $-1, %eax
+
+semDestroy_end:
+
+    popl %ebp
+    ret
+
+
+
+
+
+
+
+
+
+

@@ -1,4 +1,5 @@
 #include <libc.h>
+#include <sem.h>
 
 int
 add(int par1, int par2)
@@ -52,11 +53,28 @@ void imprimir_datos(int in_pid)
   write(1, "\n--------------------\n", 22);
 }
 
-void prueba(char* a)
+struct data {
+  char* a;
+  sem_t* sem;
+};
+
+void prueba(struct data* data_thread)
 {
+  semWait(data_thread->sem);
   write(1, "Hola, soy el proceso ", 22);
-  write(1, a, strlen(a));
+  write(1, data_thread->a, strlen(data_thread->a));
   write(1, "\n", 1);
+
+  int res = semDestroy(data_thread->sem);
+
+  if (res == 0)
+  {
+    write(1, "Se ha destruido el semaforo\n", 28);
+  }
+  else
+  {
+    write(1, "No se ha destruido el semaforo\n", 30);
+  }
 
   exit();
 }
@@ -72,7 +90,35 @@ int __attribute__ ((__section__(".text.main")))
 
   char *a = "a";
 
-  int ret = threadCreateWithStack(prueba, 1, a);
+  struct data data_thread;
+  data_thread.a = a;
+  data_thread.sem = semCreate(1);
+
+  semWait(data_thread.sem);
+  int ret = threadCreateWithStack(prueba, 1, &data_thread);
+
+  write(1, "he creado el thread\n", 20);
+
+  espera_larga();
+
+  write(1, "he salido de la espera larga\n", 29);
+
+  semSignal(data_thread.sem);
+
+  espera_larga();
+
+  int res = semDestroy(data_thread.sem);
+
+  if (res == 0)
+  {
+    write(1, "Se ha destruido el semaforo\n", 28);
+  }
+  else
+  {
+    write(1, "No se ha destruido el semaforo\n", 30);
+  }
+
+
 
   while(1) {
     char buff;

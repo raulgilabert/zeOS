@@ -40,5 +40,4 @@ int clrscr(char *b);
 int threadCreateWithStack( void (*function)(void* arg), int N, void* parameter);
 
 
-
 #endif  /* __LIBC_H__ */
