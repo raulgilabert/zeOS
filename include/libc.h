@@ -48,4 +48,6 @@ void srand(int s);
 
 unsigned int rand();
 
+int atoi(char *a);
+
 #endif  /* __LIBC_H__ */

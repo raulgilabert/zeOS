@@ -1,6 +1,7 @@
 #include <libc.h>
 #include <sem.h>
 #include <game.h>
+#include <list.h>
 
 struct keyboard_thread_data {
     sem_t *sem_keyboard;
@@ -30,15 +31,19 @@ struct zeldo {
 struct enemigo {
     unsigned int x;
     unsigned int y;
-    int en_pantalla;
-    int dead;
+    struct list_head list;
 };
 
 struct enemigos_data {
     int qtt_alive;
     int qtt;
-    struct enemigo enemigos[20];
+    struct list_head enemigos;
 };
+
+struct enemigo *list_head_to_enemigo_struct(struct list_head *l)
+{
+    return list_entry(l, struct enemigo, list);
+}
 
 void render(char *tablero, int points, struct zeldo zeldo_data, struct enemigos_data *enemigos)
 {
@@ -78,11 +83,13 @@ void render(char *tablero, int points, struct zeldo zeldo_data, struct enemigos_
     itoa(zeldo_data.hp, b);
     write(1, b, strlen(b));
 
-    for (int i = 0; i < enemigos->qtt; ++i) {
-        if (enemigos->enemigos[i].dead == 0 && enemigos->enemigos[i].en_pantalla == 1) {
-            goto_xy(enemigos->enemigos[i].x, enemigos->enemigos[i].y);
+    struct list_head *e;
 
-            change_color(0x01, 0x02);
+    if (!list_empty(&enemigos->enemigos)) {
+        list_for_each(e, &enemigos->enemigos) {
+            struct enemigo *en = list_head_to_enemigo_struct(e);
+            goto_xy(en->x, en->y);
+            change_color(0x04, 0x02);
             write(1, "E", 1);
         }
     }
@@ -120,7 +127,12 @@ void game() {
 
     write(1, "Los enemigos se mueven por la pantalla de forma aleatoria cada 4 movimientos de Zeldo.\n", 87);
     write(1, "Si Zeldo se coloca en la misma casilla que un enemigo, este le atacara y morira al instante.\n", 93);
+    write(1, "Zeldo tiene 3 puntos de vida.\n", 31);
     write(1, "Si Zeldo se queda sin vida, el juego termina.\n", 46);
+    write(1, "Zeldo puede atacar a los enemigos con su espada a una distancia de 1 casilla incluyendo diagonales.\n", 102);
+    write(1, "Si Zeldo mata a todos los enemigos, el juego termina.\n", 55);
+
+    write(1, "\n", 1);
 
     write(1, "\n", 1);
     do {
@@ -157,18 +169,39 @@ void game() {
     }
 
 
+    write(1, "Escribe la cantidad de enemigos que quieres que haya en el juego (entre 1 y 999): ", 83);
+
+    char b[4];
+    for (int i = 0; i < 3; ++i) b[i] = 0;
+
+    int j = 0;
+
+    do {
+        semSignal(sem_keyboard);
+        semWait(sem_game);
+        write(1, &d.l, 1);
+        if (j < 3)
+        {
+            b[j] = d.l;
+            ++j;
+        }
+    } while (d.l != '\n');
+
+    int qtt_enemigos = atoi(b);
+
     // Generación de enemigos
-    struct enemigos_data *enemigos = (struct enemigos_data *)memRegGet(1); // una página permite hasta 127 enemigos y el struct tiene 20
+    struct enemigos_data enemigos;
+    INIT_LIST_HEAD(&enemigos.enemigos);
+    enemigos.qtt = qtt_enemigos;
+    enemigos.qtt_alive = qtt_enemigos;
 
-    enemigos->qtt = enemigos->qtt_alive = 20;
-    for (int i = 0; i < enemigos->qtt; ++i) {
-        do {
-        enemigos->enemigos[i].x = 1 + rand()%78;
-        enemigos->enemigos[i].y = 1 + rand()%23;
+    for (int i = 0; i < enemigos.qtt; ++i) {
+        struct enemigo *e = (struct enemigo*)memRegGet(1);
 
-        } while (tablero[(enemigos->enemigos[i].y*80 + enemigos->enemigos[i].x)] != ' ');
-        enemigos->enemigos[i].en_pantalla = 1;
-        enemigos->enemigos[i].dead = 0;
+        e->x = rand()%80;
+        e->y = rand()%25;
+
+        list_add_tail(&e->list, &enemigos.enemigos);
     }
 
     // Generación de Zeldo
@@ -176,7 +209,7 @@ void game() {
 
     int points = 0;
 
-    render(tablero, points, zeldo_data, enemigos);
+    render(tablero, points, zeldo_data, &enemigos);
 
     int counter_movimiento = 0;
 
@@ -220,21 +253,85 @@ void game() {
                 }
                 break;
             case ' ':
+                // ataque
 
-                for (int i = 0; i < enemigos->qtt; ++i) {
-                    if (enemigos->enemigos[i].dead == 0 && enemigos->enemigos[i].en_pantalla == 1) {
-                        // comprobamos en las 8 direcciones de Zeldo
-                        int distancia_x = zeldo_data.x - enemigos->enemigos[i].x;
-                        int distancia_y = zeldo_data.y - enemigos->enemigos[i].y;
+                struct list_head *e = list_first(&enemigos.enemigos);
+                
+                for (; e != &enemigos.enemigos;) {
+                    int deleted = 0;
+                    struct enemigo *en = list_head_to_enemigo_struct(e);
+                    // arriba
+                    if (zeldo_data.y-1 == en->y &&
+                        zeldo_data.x == en->x) {
+                        deleted = 1;
+                        e = e->next;
+                        list_del(&en->list);
+                        points++;
+                        enemigos.qtt_alive--;
+                    }
+                    // izquierda
+                    else if (zeldo_data.y == en->y &&
+                        zeldo_data.x-1 == en->x) {
+                        deleted = 1;
+                        e = e->next;
+                        list_del(&en->list);
+                        points++;
+                        enemigos.qtt_alive--;
+                    }
+                    // abajo
+                    else if (zeldo_data.y+1 == en->y &&
+                        zeldo_data.x == en->x) {
+                        deleted = 1;
+                        e = e->next;
+                        list_del(&en->list);
+                        points++;
+                        enemigos.qtt_alive--;
+                    }
+                    // derecha
+                    else if (zeldo_data.y == en->y &&
+                        zeldo_data.x+1 == en->x) {
+                        deleted = 1;
+                        e = e->next;
+                        list_del(&en->list);
+                        points++;
+                        enemigos.qtt_alive--;
+                    }
+                    // esquinas
+                    else if (zeldo_data.y-1 == en->y &&
+                        zeldo_data.x-1 == en->x) {
+                        deleted = 1;
+                        e = e->next;
+                        list_del(&en->list);
+                        points++;
+                        enemigos.qtt_alive--;
+                    }
+                    else if (zeldo_data.y-1 == en->y &&
+                        zeldo_data.x+1 == en->x) {
+                        deleted = 1;
+                        e = e->next;
+                        list_del(&en->list);
+                        points++;
+                        enemigos.qtt_alive--;
+                    }
+                    else if (zeldo_data.y+1 == en->y &&
+                        zeldo_data.x-1 == en->x) {
+                        deleted = 1;
+                        e = e->next;
+                        list_del(&en->list);
+                        points++;
+                        enemigos.qtt_alive--;
+                    }
+                    else if (zeldo_data.y+1 == en->y &&
+                        zeldo_data.x+1 == en->x) {
+                        deleted = 1;
+                        e = e->next;
+                        list_del(&en->list);
+                        points++;
+                        enemigos.qtt_alive--;
+                    }
 
-                        if (distancia_x >= -1 && distancia_x <= 1 &&
-                            distancia_y >= -1 && distancia_y <= 1) {
-                            enemigos->enemigos[i].dead = 1;
-                            points++;
-                            enemigos->qtt_alive--;
-
-                            write(1, "a", 1);
-                        }
+                    if (deleted == 0) {
+                        e = e->next;
                     }
                 }
                 break;
@@ -247,67 +344,70 @@ void game() {
 
         if (counter_movimiento%5 == 0)
         {
-            for (int i = 0; i < enemigos->qtt; ++i) {
-                if (enemigos->enemigos[i].dead == 0) {
-                    int direccion = rand()%4;
+            struct list_head *e = list_first(&enemigos.enemigos);
+            list_for_each(e, &enemigos.enemigos)
+            {
+                struct enemigo *en = list_head_to_enemigo_struct(e);
+                int mov = rand()%4;
 
-                    switch (direccion) {
-                        case 0:
-                            // arriba
-                            if (enemigos->enemigos[i].y > 0 &&
-                                tablero[((enemigos->enemigos[i].y-1)*80 + enemigos->enemigos[i].x)] != '#' &&
-                                tablero[((enemigos->enemigos[i].y-1)*80 + enemigos->enemigos[i].x)] != '@') {
-                                enemigos->enemigos[i].y--;
-                            }
-                            break;
-                        case 1:
-                            // izquierda
-                            if (enemigos->enemigos[i].x > 0 &&
-                                tablero[(enemigos->enemigos[i].y*80 + enemigos->enemigos[i].x-1)] != '#' &&
-                                tablero[(enemigos->enemigos[i].y*80 + enemigos->enemigos[i].x-1)] != '@') {
-                                enemigos->enemigos[i].x--;
-                            }
-                            break;
-                        case 2:
-                            // abajo
-                            if (enemigos->enemigos[i].y < 24 &&
-                                tablero[((enemigos->enemigos[i].y+1)*80 + enemigos->enemigos[i].x)] != '#' &&
-                                tablero[((enemigos->enemigos[i].y+1)*80 + enemigos->enemigos[i].x)] != '@') {
-                                enemigos->enemigos[i].y++;
-                            }
-                            break;
-                        case 3:
-                            // derecha
-                            if (enemigos->enemigos[i].x < 79 &&
-                                tablero[(enemigos->enemigos[i].y*80 + enemigos->enemigos[i].x+1)] != '#' &&
-                                tablero[(enemigos->enemigos[i].y*80 + enemigos->enemigos[i].x+1)] != '@') {
-                                enemigos->enemigos[i].x++;
-                            }
-                            break;
-                        default:
-                            break;
-                    }
+                switch (mov) {
+                    case 0:
+                        // arriba
+                        if (en->y > 0 &&
+                            tablero[((en->y-1)*80 + en->x)] != '#' &&
+                            tablero[((en->y-1)*80 + en->x)] != '@') {
+                            en->y--;
+                        }
+                        break;
+                    case 1:
+                        // izquierda
+                        if (en->x > 0 &&
+                            tablero[(en->y*80 + en->x-1)] != '#' &&
+                            tablero[(en->y*80 + en->x-1)] != '@') {
+                            en->x--;
+                        }
+                        break;
+                    case 2:
+                        // abajo
+                        if (en->y < 24 &&
+                            tablero[((en->y+1)*80 + en->x)] != '#' &&
+                            tablero[((en->y+1)*80 + en->x)] != '@') {
+                            en->y++;
+                        }
+                        break;
+                    case 3:
+                        // derecha
+                        if (en->x < 79 &&
+                            tablero[(en->y*80 + en->x+1)] != '#' &&
+                            tablero[(en->y*80 + en->x+1)] != '@') {
+                            en->x++;
+                        }
+                        break;
+                    default:
+                        break;
                 }
             }
         }
 
         // si zeldo está en la misma casilla que un enemigo, pierde un punto de vida
-        for (int i = 0; i < enemigos->qtt; ++i) {
-            if (enemigos->enemigos[i].dead == 0 && enemigos->enemigos[i].en_pantalla == 1) {
-                if (zeldo_data.x == enemigos->enemigos[i].x &&
-                    zeldo_data.y == enemigos->enemigos[i].y) {
-                    zeldo_data.hp--;
-
-                    // además, el enemigo desaparece
-                    enemigos->enemigos[i].en_pantalla = 0;
-                    enemigos->qtt_alive--;
-                }
+        struct list_head *e = list_first(&enemigos.enemigos);
+        for (; e != &enemigos.enemigos;) {
+            struct enemigo *en = list_head_to_enemigo_struct(e);
+            if (zeldo_data.y == en->y &&
+                zeldo_data.x == en->x) {
+                zeldo_data.hp--;
+                e = e->next;
+                list_del(&en->list);
+                enemigos.qtt_alive--;
+            }
+            else {
+                e = e->next;
             }
         }
 
-        render(tablero, points, zeldo_data, enemigos);
+        render(tablero, points, zeldo_data, &enemigos);
 
-        if (enemigos->qtt_alive == 0 || zeldo_data.hp == 0) {
+        if (enemigos.qtt_alive == 0 || zeldo_data.hp == 0) {
             break;
         }
     }
@@ -316,6 +416,8 @@ void game() {
 
     goto_xy(0, 0);
 
+    change_color(0x02, 0x00);
+
     if (zeldo_data.hp == 0) {
         write(1, "Has perdido.\n\n", 14);
     }
@@ -323,7 +425,7 @@ void game() {
         write(1, "Has ganado.\n\n", 13);
     }
 
-    write(1, "De repente Zeldo escucha un ruido raro desde el cielo.\n\n", 58);
+    write(1, "De repente Zeldo escucha un ruido raro desde el cielo.\n\n", 56);
 
     write(1, "Zeldo: Que es ese ruido?\n\n", 26);
     
@@ -339,7 +441,7 @@ void game() {
 
     write(1, "Abogado: No importa, te vamos a demandar igual.\n\n", 49);
 
-    write(1, "Zeldo recibe un golpe en la cabeza y se desmaya. Despierta varias horas despues en un juzgado y acaba condenado a cadena perpetua por plagio a Nintendo.\n", 154);
+    write(1, "Zeldo recibe un golpe en la cabeza y se desmaya. Despierta varias horas despues en un juzgado y acaba condenado a cadena perpetua por plagio a Nintendo.\n\n", 154);
 
     write(1, "FIN\n", 4);
 }

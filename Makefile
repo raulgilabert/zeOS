@@ -47,6 +47,7 @@ USROBJ = \
 	wrappers.o \
 	espera.o \
 	game.o \
+	list.o \
 	# libjp.a \
 
 all:zeos.bin
