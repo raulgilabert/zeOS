@@ -64,12 +64,19 @@ void render(char *tablero, int points, struct zeldo zeldo_data, struct enemigos_
         }
     }
 
+    for (int i = 0; i < 80; ++i)
+    {
+        pantalla[2*i] = 0x0;
+        pantalla[2*i+1] = 0x0;
+    }
+
     clrscr(pantalla);
 
     goto_xy(zeldo_data.x, zeldo_data.y);
     change_color(0x00, 0x02);
     write(1, "Z", 1);
 
+    change_color(0x02, 0x00);
     goto_xy(0, 0);
     write(1, "Puntos: ", 8);
     char b[10];
@@ -125,11 +132,11 @@ void game() {
 
     write(1, "\n", 1);
 
-    write(1, "Los enemigos se mueven por la pantalla de forma aleatoria cada 4 movimientos de Zeldo.\n", 87);
+    write(1, "Los enemigos se mueven por la pantalla de forma aleatoria cada 5 movimientos de Zeldo.\n", 87);
     write(1, "Si Zeldo se coloca en la misma casilla que un enemigo, este le atacara y morira al instante.\n", 93);
-    write(1, "Zeldo tiene 3 puntos de vida.\n", 31);
+    write(1, "Zeldo tiene 3 puntos de vida.\n", 30);
     write(1, "Si Zeldo se queda sin vida, el juego termina.\n", 46);
-    write(1, "Zeldo puede atacar a los enemigos con su espada a una distancia de 1 casilla incluyendo diagonales.\n", 102);
+    write(1, "Zeldo puede atacar a los enemigos con su espada a una distancia de 1 casilla incluyendo diagonales.\n", 100);
     write(1, "Si Zeldo mata a todos los enemigos, el juego termina.\n", 55);
 
     write(1, "\n", 1);
@@ -144,14 +151,14 @@ void game() {
     char tablero[80*25];
 
     // Generación del tablero
-    for (int i = 0; i < 80*25; ++i) {
+    for (int i = 80; i < 80*25; ++i) {
         tablero[i] = ' ';
     }
 
     // generacion aleatoria de arbustos
     for (int i = 0; i < 100; ++i) {
         int x = rand()%80;
-        int y = rand()%25;
+        int y = rand()%24 + 1;
 
         if (tablero[(y*80 + x)] == ' ') {
             tablero[(y*80 + x)] = '#';
@@ -161,7 +168,7 @@ void game() {
     // generacion aleatoria de piedras
     for (int i = 0; i < 50; ++i) {
         int x = rand()%80;
-        int y = rand()%25;
+        int y = rand()%24 + 1;
 
         if (tablero[(y*80 + x)] == ' ') {
             tablero[(y*80 + x)] = '@';
@@ -169,7 +176,7 @@ void game() {
     }
 
 
-    write(1, "Escribe la cantidad de enemigos que quieres que haya en el juego (entre 1 y 999): ", 83);
+    write(1, "Escribe la cantidad de enemigos que quieres que haya en el juego (entre 1 y 100 no más que si no va muy lento): ", 114);
 
     char b[4];
     for (int i = 0; i < 3; ++i) b[i] = 0;
@@ -198,8 +205,10 @@ void game() {
     for (int i = 0; i < enemigos.qtt; ++i) {
         struct enemigo *e = (struct enemigo*)memRegGet(1);
 
-        e->x = rand()%80;
-        e->y = rand()%25;
+        do {
+            e->x = rand()%80;
+            e->y = rand()%24 + 1;
+        } while (tablero[(e->y*80 + e->x)] != ' ');
 
         list_add_tail(&e->list, &enemigos.enemigos);
     }
@@ -222,7 +231,7 @@ void game() {
         switch (d.l) {
             case 'w':
                 // arriba
-                if (zeldo_data.y > 0 &&
+                if (zeldo_data.y > 1 &&
                     tablero[((zeldo_data.y-1)*80 + zeldo_data.x)] != '#' &&
                     tablero[((zeldo_data.y-1)*80 + zeldo_data.x)] != '@') {
                     zeldo_data.y--;
@@ -252,7 +261,7 @@ void game() {
                     zeldo_data.x++;
                 }
                 break;
-            case ' ':
+            case ' ': {
                 // ataque
 
                 struct list_head *e = list_first(&enemigos.enemigos);
@@ -335,6 +344,7 @@ void game() {
                     }
                 }
                 break;
+                }
             default:
                 break;
         }
@@ -353,7 +363,7 @@ void game() {
                 switch (mov) {
                     case 0:
                         // arriba
-                        if (en->y > 0 &&
+                        if (en->y > 1 &&
                             tablero[((en->y-1)*80 + en->x)] != '#' &&
                             tablero[((en->y-1)*80 + en->x)] != '@') {
                             en->y--;

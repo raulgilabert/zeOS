@@ -22,7 +22,7 @@
 - [X] create_thread & exit
 - [X] sync
 - [X] memRegGet & memRegDel
-- [ ] jueginho
+- [X] jueginho
 - [ ] slab allocator a user ( dudo que lo haga y es opcional)
 
 
