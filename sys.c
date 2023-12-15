@@ -511,9 +511,6 @@ param1
 
   // añadir elementos a la pila de usuario
 
-
-  printk("a");
-
   return 0;
 
 }

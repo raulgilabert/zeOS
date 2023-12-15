@@ -44,4 +44,8 @@ char* memRegGet(int num_pages);
 int memRegDel(char* m);
 
 
+void srand(int s);
+
+unsigned int rand();
+
 #endif  /* __LIBC_H__ */
