@@ -83,3 +83,32 @@ void ctox(char a, char *b)
   b[i]=0;
 }
 
+
+int seed = 0;
+
+void srand(int s)
+{
+  seed = s;
+}
+
+unsigned int rand()
+{
+  seed = (seed * 1103515245 + 12345) % 2147483648;
+  return seed;
+}
+
+int atoi(char *a)
+{
+  int i;
+  int res = 0;
+  
+  i=0;
+  
+  while (a[i]!=0 && a[i] != '\n')
+  {
+    res = res * 10 + a[i] - '0';
+    i++;
+  }
+
+  return res;
+}

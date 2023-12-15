@@ -87,6 +87,9 @@ int __attribute__ ((__section__(".text.main")))
      privileged one, and so it will raise an exception */
   /* __asm__ __volatile__ ("mov %0, %%cr3":: "r" (0) ); */
 
+  write(1, "--------------------", 20);
+  write(1, "\n\n", 2);
+
   game();
 
   while (1);
